@@ -1,0 +1,10 @@
+{:paths ["src" "test"]
+ :tasks
+ {:requires ([babashka.fs :as fs]
+             [babashka.process :refer [shell]]
+             [clojure.pprint :refer [pprint]])
+  clean (let [files [".calva" ".lsp" ".clj-kondo" ".shadow-cljs"
+                     ".cpcache" ".portal" ".nrepl-port"]]
+          (doseq [f files]
+                 (when (fs/exists? f) (fs/delete-tree f))))
+  build (shell "clojure" "-T:build" "uber")}}

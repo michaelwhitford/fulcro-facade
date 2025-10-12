@@ -1,0 +1,21 @@
+{
+  "name": "fulcro-rad-tempate",
+  "version": "1.0.0",
+  "description": "A template for building Fulcro RAD apps",
+  "scripts": {},
+  "dependencies": {
+    "@js-joda/core": "^5.6.3",
+    "@js-joda/timezone": "^2.21.1",
+    "big.js": "^7.0.1",
+    "intl-messageformat": "^10.7.6",
+    "elkjs": "^0.11.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-toastify": "^11.0.5",
+    "semantic-ui-react": "^2.1.5",
+    "victory": "^37.3.6"
+  },
+  "devDependencies": {
+    "shadow-cljs": "^2.28.23"
+  }
+}

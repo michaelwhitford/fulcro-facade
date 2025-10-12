@@ -1,0 +1,13 @@
+### ident with params
+
+[([:person/id "1"] {:search "something"})]
+
+### join with params
+
+[({:swapi/all-people ['*]} {:search "Luke"})]
+
+### ident join with params
+
+[{([:person/id "1"] {:search "Luke"}) ['*]}]
+
+

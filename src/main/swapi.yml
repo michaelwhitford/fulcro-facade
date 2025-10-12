@@ -1,0 +1,585 @@
+openapi: 3.0.0
+info:
+  title: Star Wars API
+  description: Custom spec for swapi.dev
+  version: "0.1"
+
+servers:
+  - url: https://swapi.dev/api
+    description: "The Star Wars API server"
+
+components:
+  parameters:
+    Search:
+      name: search
+      in: query
+      required: false
+      description: Filter items on the server side.
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Pagination for many results.
+      schema:
+        type: int
+
+  schemas:
+    Film:
+      type: object
+      required:
+        - id
+      properties:
+        title:
+          type: string
+        characters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+          created:
+            type: string
+          director:
+            type: string
+          edited:
+            type: string
+          episode_id:
+            type: integer
+          opening_crawl:
+            type: string
+          planets:
+            type: array
+            items:
+              $ref: "#/components/schemas/Planet"
+          producer:
+            type: string
+          release_date:
+            type: string
+          species:
+            type: array
+            items:
+              $ref: "#/components/schemas/Species"
+          starships:
+            type: array
+            items:
+              $ref: "#/components/schemas/Starship"
+          url:
+            type: string
+          vehicles:
+            type: array
+            items:
+              $ref: "#/components/schemas/Vehicle"
+    Person:
+      type: object
+      required:
+        - id
+      properties:
+        name:
+          type: string
+        birth_year:
+          type: string
+        eye_color:
+          type: string
+        films:
+          type: array
+          items:
+            $ref: "#/components/schemas/Film"
+        gender:
+          type: string
+        hair_color:
+          type: string
+        height:
+          type: string
+        homeworld:
+          $ref: "#/components/schemas/Planet"
+        mass:
+          type: string
+        skin_color:
+          type: string
+        created:
+          type: string
+        edited:
+          type: string
+        species:
+          type: array
+          items:
+            $ref: "#/components/schemas/Species"
+        starships:
+          type: array
+          items:
+            $ref: "#/components/schemas/Starship"
+        url:
+          type: string
+        vehicles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vehicle"
+
+    Species:
+      type: object
+      required:
+        - id
+      properties:
+        average_height:
+          type: string
+        average_lifespan:
+          type: string
+        classification:
+          type: string
+        created:
+          type: string
+        designation:
+          type: string
+        edited:
+          type: string
+        eye_colors:
+          type: string
+        hair_colors:
+          type: string
+        homeworld:
+          $ref: "#/components/schemas/Planet"
+        language:
+          type: string
+        name:
+          type: string
+        people:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+        films:
+          type: array
+          items:
+            $ref: "#/components/schemas/Film"
+        skin_colors:
+          type: string
+        url:
+          type: string
+
+    Vehicle:
+      type: object
+      required:
+        - id
+      properties:
+        cargo_capacity:
+          type: string
+        consumables:
+          type: string
+        cost_in_credits:
+          type: string
+        created:
+          type: string
+        crew:
+          type: string
+        edited:
+          type: string
+        length:
+          type: string
+        manufacturer:
+          type: string
+        max_atmosphering_speed:
+          type: string
+        model:
+          type: string
+        name:
+          type: string
+        passengers:
+          type: string
+        pilots:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+        films:
+          type: array
+          items:
+            $ref: "#/components/schemas/Film"
+        url:
+          type: string
+        vehicle_class:
+          type: string
+
+    Starship:
+      type: object
+      required:
+        - id
+      properties:
+        MGLT:
+          type: string
+        cargo_capacity:
+          type: string
+        consumables:
+          type: string
+        cost_in_credits:
+          type: string
+        created:
+          type: string
+        crew:
+          type: string
+        edited:
+          type: string
+        hyperdrive_rating:
+          type: string
+        length:
+          type: string
+        manufacturer:
+          type: string
+        max_atmosphering_speed:
+          type: string
+        model:
+          type: string
+        name:
+          type: string
+        passengers:
+          type: string
+        films:
+          type: array
+          items:
+            $ref: "#/components/schemas/Film"
+        pilots:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+        starship_class:
+          type: string
+        url:
+          type: string
+
+    Planet:
+      type: object
+      required:
+        - id
+      properties:
+        name:
+          type: string
+        rotation_period:
+          type: string
+        surface_water:
+          type: string
+        climate:
+          type: string
+        residents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+        orbital_period:
+          type: string
+        diameter:
+          type: string
+        created:
+          type: string
+        gravity:
+          type: string
+        edited:
+          type: string
+        films:
+          type: array
+          items:
+            $ref: "#/components/schemas/Film"
+        population:
+          type: string
+        terrain:
+          type: string
+        url:
+          type: string
+
+  responses:
+    404Error:
+      description: Item not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+
+paths:
+  /people/:
+    get:
+      summary: Return a list of people
+      operationId: people
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: A list of people
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                  previous:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Person"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /people/{id}:
+    get:
+      summary: Returns a single person
+      operationId: person
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID of the person"
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: People Facts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /species/:
+    get:
+      summary: Returns a list of species
+      operationId: species
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: A list of species
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                  previous:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Species"
+
+  /films/:
+    get:
+      summary: Returns a list of films
+      operationId: films
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: A list of films
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                  previous:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Film"
+
+  /vehicles/:
+    get:
+      summary: Returns a list of vehicles
+      operationId: vehicles
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: A list of vehicles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                  previous:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Vehicle"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /starships/:
+    get:
+      summary: Returns a list of starships
+      operationId: starships
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: A list of starships
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                  previous:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Starship"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /planets/:
+    get:
+      summary: Returns a list of planets
+      operationId: planets
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: A list of planets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                  previous:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Planet"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /species/{id}:
+    get:
+      summary: Returns a single specie
+      operationId: specie
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID of the specie"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Specie Facts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Species"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /films/{id}:
+    get:
+      summary: Returns a single film
+      operationId: film
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID of the film"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Film Facts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Film"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /vehicles/{id}:
+    get:
+      summary: Returns a single vehicle
+      operationId: vehicle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID of the vehicle"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Vehicle Facts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /starships/{id}:
+    get:
+      summary: Returns a single starship
+      operationId: starship
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID of the starship"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Starship Facts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Starship"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /planets/{id}:
+    get:
+      summary: Returns a single planet
+      operationId: planet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "ID of the planet"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Planet Facts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Planet"
+        "404":
+          $ref: "#/components/responses/404Error"

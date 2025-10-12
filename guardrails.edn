@@ -1,0 +1,7 @@
+{:defn-macro nil
+ :throw?     false
+ :emit-spec? true
+ :expound    {:show-valid-values? true
+              :print-specs?       true}
+ :tap>? true
+ :guardrails/mcps 100}

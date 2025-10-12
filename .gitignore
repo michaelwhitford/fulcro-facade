@@ -1,0 +1,11 @@
+.clj-kondo
+.calva
+.cpcache
+.lsp
+.portal
+.shadow-cljs
+.DS_Store
+.nrepl-port
+node_modules
+resources/public/js
+target

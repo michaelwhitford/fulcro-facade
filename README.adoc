@@ -1,0 +1,69 @@
+= Fulcro RAD Template
+
+A RAD template with Datomic Cloud preconfigured. Relatively easy to swap out back-end.
+
+== Usage
+
+Clone this repository (it is a template repo), and then use the `rename-project.sh`
+script to set your desired package name:
+
+[source, bash]
+-----
+$ ./rename-project.sh com.my-domain.app-name
+-----
+
+Be sure to use hyphens, NOT underscores. The rename script will correct the filenames
+accordingly.
+
+The project should now build and run.
+
+== Building the SPA
+
+You must compile the CLJS source to run the client. If you want to be
+able to edit it, just start a shadow-cljs watch:
+
+[source, bash]
+-----
+$ yarn
+$ shadow-cljs watch main
+-----
+
+if you don't have `yarn`, use `npm install` instead.
+
+== Running the Server
+
+The server in this template uses an in-memory datomic-free database. You can start it from the REPL by including the
+deps `:dev` alias.
+
+[source, bash]
+-----
+$ clj -A:dev
+user=> (clojure.core/require 'development)
+user=> (development/start)
+-----
+
+== Restarting
+
+There are `stop`, `start`, `fast-restart`, and `restart` functions in `development`.
+The `restart` function will stop the server, reload all source, and start it again. You can often get by
+with manually evaluating functions with a running server, but if you modify something that is closed over during
+start (such as a function that is embedded in the middleware) you'll have to load the appropriate files and stop/start.
+While the source is small it is often less hassle to just use `restart`.
+
+== LICENSE
+
+The MIT License (MIT)
+Copyright (c), Fulcrologic, LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
