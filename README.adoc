@@ -1,21 +1,12 @@
-= Fulcro RAD Template
+= Fulcro API Client: facade
 
-A RAD template with Datomic Cloud preconfigured. Relatively easy to swap out back-end.
+An api client written for fulcro-rad. A toy app that acts as a client to multiple API backends.
+
+I wrote this as a way of having app code I can share as I try to learn fulcro and fulcro-rad.
+
+Application is barely working, and only the link:https//swapi.dev[starwars api] is in-progress.
 
 == Usage
-
-Clone this repository (it is a template repo), and then use the `rename-project.sh`
-script to set your desired package name:
-
-[source, bash]
------
-$ ./rename-project.sh com.my-domain.app-name
------
-
-Be sure to use hyphens, NOT underscores. The rename script will correct the filenames
-accordingly.
-
-The project should now build and run.
 
 == Building the SPA
 
@@ -53,7 +44,7 @@ While the source is small it is often less hassle to just use `restart`.
 == LICENSE
 
 The MIT License (MIT)
-Copyright (c), Fulcrologic, LLC
+Copyright (c), Michael Whitford
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
