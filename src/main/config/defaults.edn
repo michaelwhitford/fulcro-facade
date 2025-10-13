@@ -74,5 +74,5 @@
 
  :taoensso.timbre/logging-config    {:min-level :info}
 
- :us.whitford.swapi.components.swapi/config {:swagger-file "swapi.yml"
+ :us.whitford.facade.components.swapi/config {:swagger-file "swapi.yml"
                                              :server-url "https://swapi.dev/api"}}

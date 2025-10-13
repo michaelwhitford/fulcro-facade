@@ -5,7 +5,7 @@
                        :output-dir "resources/public/js/main"
                        :asset-path "/js/main"
                        :dev        {:compiler-options {:external-config {:fulcro {:html-source-annotations? true}}}}
-                       :modules    {:main {:init-fn us.whitford.swapi.client/init}}
+                       :modules    {:main {:init-fn us.whitford.facade.client/init}}
                        :js-options {:resolve
                                     {
                                      ;; for performance checking during dev
@@ -23,7 +23,7 @@
                                                  holyjak.fulcro-troubleshooting
                                                  #_com.fulcrologic.fulcro.inspect.dom-picker-preload
                                                  ]
-                                    :after-load us.whitford.swapi.client/refresh}}
+                                    :after-load us.whitford.facade.client/refresh}}
 
             :test     {:target           :browser-test
                        :test-dir         "resources/public/js/test"

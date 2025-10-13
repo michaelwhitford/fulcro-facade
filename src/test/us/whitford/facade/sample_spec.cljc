@@ -1,4 +1,4 @@
-(ns us.whitford.swapi.sample-spec
+(ns us.whitford.facade.sample-spec
   (:require
     [fulcro-spec.core :refer [specification assertions component =>]]))
 

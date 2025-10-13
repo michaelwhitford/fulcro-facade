@@ -6,10 +6,10 @@
     [datomic.client.api :as d]
     [mount.core :as mount]
     [taoensso.timbre :as log]
-    [us.whitford.swapi.components.database :refer [datomic-connections]]
-    [us.whitford.swapi.components.ring-middleware]
-    [us.whitford.swapi.components.server]
-    [us.whitford.swapi.model.account :refer [new-account]]))
+    [us.whitford.facade.components.database :refer [datomic-connections]]
+    [us.whitford.facade.components.ring-middleware]
+    [us.whitford.facade.components.server]
+    [us.whitford.facade.model.account :refer [new-account]]))
 
 ;; Prevent tools-ns from findinga source in other places, such as resources
 (set-refresh-dirs "src/main" "src/dev")
