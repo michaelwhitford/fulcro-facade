@@ -128,8 +128,8 @@
   (setup-RAD app)
   (scf/install-fulcro-statecharts! app)
   (uir/start-routing! app application-chart)
+  #_(uir/start-routing! app application-chart)
   (uir/route-to! app `LandingPage)
-  (uir/start-routing! app application-chart)
   ;; dynamic routing
   ;; (dr/initialize! app)
   ;; (dr/change-route! app ["landing-page"])
