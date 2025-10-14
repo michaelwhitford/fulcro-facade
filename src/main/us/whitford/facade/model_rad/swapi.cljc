@@ -9,7 +9,6 @@
     [com.fulcrologic.rad.form-options :as fo]))
 
 ;; entity :swapi/all-entities
-
 (defattr entity_id :entity/id :string
   {ao/identity? true
    ao/required? true})
@@ -42,7 +41,8 @@
   {ao/identities #{:person/id}})
 
 (defattr person_films :person/films :ref
-  {ao/target :film/id
+  {ao/identities #{:person/id}
+   ao/target :film/id
    ao/cardinality :many})
 
 (defattr person_gender :person/gender :string
@@ -55,8 +55,10 @@
   {ao/identities #{:person/id}})
 
 (defattr person_homeworld :person/homeworld :ref
-  {ao/target :planet/id
-   ao/cardinality :one})
+  {ao/identities #{:person/id}
+   ao/target :planet/id
+   ao/cardinality :one
+   })
 
 (defattr person_mass :person/mass :string
   {ao/identities #{:person/id}})
@@ -65,9 +67,9 @@
   {ao/identities #{:person/id}})
 
 (def person-attributes
-  [person_id person_name person_birth_year person_eye_color person_films
-   person_gender person_hair_color person_height person_homeworld
-   person_mass person_skin_color])
+  [person_id person_name #_person_birth_year #_person_eye_color #_person_films
+   #_person_gender #_person_hair_color #_person_height #_person_homeworld
+   #_person_mass #_person_skin_color])
 
 ;; film :swapi/all-films
 
@@ -80,6 +82,7 @@
 
 (defattr film_characters :film/characters :ref
   {ao/target :film/id
+   ao/identities #{:film/id}
    ao/cardinality :many})
 
 (defattr film_director :film/director :string
@@ -93,6 +96,7 @@
 
 (defattr film_planets :film/planets :ref
   {ao/target :planet/id
+   ao/identities #{:film/id}
    ao/cardinality :many})
 
 (defattr film_producer :film/producer :string
@@ -103,10 +107,12 @@
 
 (defattr film_species :film/species :ref
   {ao/target :specie/id
+   ao/identities #{:film/id}
    ao/cardinality :many})
 
 (defattr film_starships :film/starships :ref
   {ao/target :spaceship/id
+   ao/identities #{:film/id}
    ao/cardinality :many})
 
 (defattr film_vehicles :film/vehicles :ref
@@ -175,7 +181,8 @@
   {ao/identities #{:specie/id}})
 
 (defattr species_films :specie/films :ref
-  {ao/target :specie/id
+  {ao/target :film/id
+   ao/identities #{:specie/id}
    ao/cardinality :many})
 
 (defattr species_hair_colors :specie/hair_colors :string
@@ -183,6 +190,7 @@
 
 (defattr species_homeworld :specie/homeworld :ref
   {ao/target :planet/id
+   ao/identities #{:specie/id}
    ao/cardinality :one})
 
 (defattr species_language :specie/language :string
@@ -190,6 +198,7 @@
 
 (defattr species_people :specie/people :ref
   {ao/target :person/id
+   ao/identities #{:specie/id}
    ao/cardinality :many})
 
 (defattr species_skin_colors :specie/skin_colors :string
@@ -215,7 +224,7 @@
 (defattr vehicle_consumables :vehicle/consumables :string
   {ao/identities #{:vehicle/id}})
 
-(defattr vehicle_cost_in_credits :vehicle/cost_in_credits
+(defattr vehicle_cost_in_credits :vehicle/cost_in_credits :string
   {ao/identities #{:vehicle/id}})
 
 (defattr vehicle_crew :vehicle/crew :string
@@ -223,6 +232,7 @@
 
 (defattr vehicle_films :vehicle/films :ref
   {ao/target :film/id
+   ao/identities #{:vehicle/id}
    ao/cardinality :many})
 
 (defattr vehicle_model :vehicle/model :string
@@ -236,6 +246,7 @@
 
 (defattr vehicle_pilots :vehicle/pilots :ref
   {ao/target :person/id
+   ao/identities #{:vehicle/id}
    ao/cardinality :many})
 
 (def vehicle-attributes
@@ -265,6 +276,7 @@
 
 (defattr starship_films :starship/films :ref
   {ao/target :film/id
+   ao/identities #{:starship/id}
    ao/cardinality :many})
 
 (defattr starship_hyperdrive_rating :starship/hyperdrive_rating :string
@@ -287,6 +299,7 @@
 
 (defattr starship_pilots :starship/pilots :ref
   {ao/target :person/id
+   ao/identities #{:starship/id}
    ao/cardinality :many})
 
 (defattr starship_class :starship/class :string
