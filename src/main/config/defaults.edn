@@ -68,11 +68,11 @@
 
  :com.fulcrologic.rad.pathom/config {:trace?         false
                                      ;; TODO: Elide params and such in logging
-                                     :sensitive-keys #{:password :com.example.model.account/password}
+                                     :sensitive-keys #{:password :us.whitford.facade.model.account/password}
                                      :log-requests?  true
                                      :log-responses? true}
 
  :taoensso.timbre/logging-config    {:min-level :info}
 
  :us.whitford.facade.components.swapi/config {:swagger-file "swapi.yml"
-                                             :server-url "https://swapi.dev/api"}}
+                                              :server-url "https://swapi.dev/api"}}
