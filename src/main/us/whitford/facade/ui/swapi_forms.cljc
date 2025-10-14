@@ -10,6 +10,7 @@
     [com.fulcrologic.rad.form :as form]
     [com.fulcrologic.rad.form-options :as fo]
     [com.fulcrologic.rad.ids :refer [new-uuid select-keys-in-ns]]
+    [com.fulcrologic.rad.picker-options :as po]
     [com.fulcrologic.rad.report :as report]
     [com.fulcrologic.rad.report-options :as ro]
     [com.fulcrologic.rad.semantic-ui-options :as suo]
@@ -17,18 +18,74 @@
     [com.fulcrologic.statecharts.integration.fulcro.rad-integration :as ri]
     [com.fulcrologic.statecharts.integration.fulcro.ui-routes :as uir]
     [taoensso.timbre :as log]
+    [us.whitford.facade.components.utils :refer [str->int]]
     [us.whitford.facade.model-rad.swapi :as rs]
     [us.whitford.facade.model.swapi :as m.swapi]
     [us.whitford.facade.ui.file-forms :refer [FileForm]]))
 
-(form/defsc-form PersonForm [this {:person/keys [id name mass eye_color birth_year] :as props}]
+(defsc PersonQuery [_ _]
+  {:query [:person/id :person/name]
+   :ident :person/id})
+
+(defsc FilmQuery [_ _]
+  {:query [:film/id :film/title]
+   :ident :film/id})
+
+(defsc PlanetQuery [_ _]
+  {:query [:planet/id :planet/name]
+   :ident :planet/id})
+
+(defsc SpeciesQuery [_ _]
+  {:query [:specie/id :specie/name]
+   :ident :specie/id})
+
+(defsc VehicleQuery [_ _]
+  {:query [:vehicle/id :vehicle/name]
+   :ident :vehicle/id})
+
+(defsc StarshipQuery [_ _]
+  {:query [:starship/id :starship/name]
+   :ident :starship/id})
+
+(form/defsc-form PersonForm [this {:person/keys [id name mass eye_color birth_year films
+                                                 gender hair_color height homeworld skin_color] :as props}]
   {fo/id             rs/person_id
    fo/title          "Person Details"
    fo/route-prefix   "person"
-   fo/default-values {}
-   fo/attributes     [rs/person_name rs/person_birth_year rs/person_eye_color rs/person_films
-                      rs/person_gender rs/person_hair_color rs/person_height rs/person_homeworld
-                      rs/person_mass rs/person_skin_color]
+   #_#_fo/default-values {}
+   fo/attributes     [rs/person_id rs/person_name rs/person_birth_year rs/person_eye_color
+                      rs/person_films rs/person_gender rs/person_hair_color rs/person_height
+                      rs/person_homeworld rs/person_mass rs/person_skin_color]
+
+   fo/field-styles {:person/films :pick-many
+                    :person/homeworld :pick-one}
+   fo/field-options {:person/films {po/query-key :swapi/all-films
+                                    #_#_po/query-component FilmQuery
+                                    po/query [:film/id :film/title]
+                                    po/form ::FilmForm
+                                    po/allow-create? false
+                                    po/allow-edit? false
+                                    po/cache-time-ms 30000
+                                    #_#_po/cache-key :all-films-options
+                                    po/options-xform (fn [_ options]
+                                                       (tap> {:from ::field-options-person-films :options options})
+                                                       (mapv (fn [{:film/keys [id title]}]
+                                                               #_(tap> {:from ::field-options-person-films :id id :title title})
+                                                               {:text (str title) :value [:film/id id]})
+                                                         (sort-by :film/id options)))}
+                     :person/homeworld {:style :dropdown
+                                        po/query-key :swapi/all-planets
+                                        po/query-component PlanetQuery
+                                        po/allow-create? false
+                                        po/allow-edit? false
+                                        po/cache-time-ms 30000
+                                        po/cache-key :all-planets-options
+                                        po/options-xform (fn [_ options]
+                                                           (tap> {:from ::field-options-person-homeworld :options options})
+                                                           (mapv (fn [{:planet/keys [id name]}]
+                                                                   #_(tap> {:from ::field-options-person-homeworld :id id :name name})
+                                                                   {:text (str name) :value [:planet/id id]})
+                                                             (sort-by :planet/name options)))}}
    fo/cancel-route   ::PersonList
    fo/debug?         true
    fo/read-only?     true
@@ -58,9 +115,11 @@
   (comp/component-options PersonForm))
 
 (defsc PersonListItem [this
-                       {:person/keys [id name mass birth_year eye_color] :as props}
+                       {:person/keys [id name mass birth_year eye_color films
+                                      hair_color gender height skin_color homeworld] :as props}
                        {:keys [report-instance row-class ::report/idx]}]
-  {:query [:person/id :person/name :person/mass :person/eye_color :person/birth_year]
+  {:query [:person/id :person/name :person/mass :person/eye_color :person/birth_year :person/films
+           :person/hair_color :person/gender :person/height :person/skin_color :person/homeworld]
    :ident :person/id}
   (let [{:keys [edit-form entity-id]} (report/form-link report-instance props :person/id)]
     (tap> {:from ::PersonListItem :edit-form edit-form :entity-id entity-id})
@@ -83,9 +142,8 @@
    ro/source-attribute    :swapi/all-people
    ro/row-pk              rs/person_id
    ro/columns             [rs/person_name rs/person_birth_year rs/person_eye_color rs/person_mass]
-   ro/column-formatters   {:person/name (fn [this v {:person/keys [id] :as params}]
-                                          (dom/a {:onClick (fn [] (ri/edit! this PersonForm id))}
-                                            (str v)))}
+   ro/column-formatters   {:person/name (fn [this v {:person/keys [id] :as p}]
+                                          (dom/a {:onClick #(ri/edit! this PersonForm id)} (str v)))}
    ro/row-visible? (fn [{::keys [filter-content]} {:person/keys [name]}]
                      (let [nm (some-> name (str/lower-case))
                            target (some-> filter-content
@@ -125,6 +183,8 @@
                                                                          "collapsing"))}
    })
 
+(def ui-person-list (comp/factory PersonList))
+
 (form/defsc-form FilmForm [this {:film/keys [id title] :as props}]
   {fo/id             rs/film_id
    fo/title          "Film Details"
@@ -136,6 +196,8 @@
    fo/debug?         true
    fo/read-only?     true
    fo/silent-abandon? true})
+
+(def ui-film-form (comp/factory FilmForm))
 
 (report/defsc-report FilmList [this {:ui/keys [current-rows current-page page-count] :as props}]
   {ro/title "All Films"
@@ -172,6 +234,8 @@
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
+(def ui-film-list (comp/factory FilmList))
+
 (form/defsc-form PlanetForm [this {:planet/keys [id name] :as props}]
   {fo/id             rs/planet_id
    fo/title          "Planet Details"
@@ -184,6 +248,8 @@
    fo/debug?         true
    fo/read-only?     true
    fo/silent-abandon? true})
+
+(def ui-planet-form (comp/factory PlanetForm))
 
 (report/defsc-report PlanetList [this {:ui/keys [current-rows current-page page-count] :as props}]
   {ro/title "All Planets"
@@ -220,6 +286,8 @@
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
+(def ui-planet-list (comp/factory PlanetList))
+
 (form/defsc-form SpeciesForm [this {:specie/keys [id name] :as props}]
   {fo/id             rs/species_id
    fo/title          "Species Details"
@@ -232,6 +300,8 @@
    fo/debug?         true
    fo/read-only?     true
    fo/silent-abandon? true})
+
+(def ui-species-form (comp/factory SpeciesForm))
 
 (report/defsc-report SpeciesList [this {:ui/keys [current-rows current-page page-count] :as props}]
   {ro/title "All Species"
@@ -269,6 +339,8 @@
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
+(def ui-species-list (comp/factory SpeciesList))
+
 (form/defsc-form VehicleForm [this {:vehicle/keys [id name] :as props}]
   {fo/id             rs/vehicle_id
    fo/title          "Vehicle Details"
@@ -281,6 +353,8 @@
    fo/debug?         true
    fo/read-only?     true
    fo/silent-abandon? true})
+
+(def ui-vehicle-form (comp/factory VehicleForm))
 
 (report/defsc-report VehicleList [this {:ui/keys [current-rows current-page page-count] :as props}]
   {ro/title "All Vehicles"
@@ -317,6 +391,8 @@
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
+(def ui-vehicle-list (comp/factory VehicleList))
+
 (form/defsc-form StarshipForm [this {:starship/keys [id name] :as props}]
   {fo/id             rs/starship_id
    fo/title          "Star Ship Details"
@@ -330,6 +406,8 @@
    fo/debug?         true
    fo/read-only?     true
    fo/silent-abandon? true})
+
+(def ui-starship-form (comp/factory StarshipForm))
 
 (report/defsc-report StarshipList [this {:ui/keys [current-rows current-page page-count] :as props}]
   {ro/title "All Star Ships"
@@ -365,3 +443,5 @@
    ro/control-layout      {:action-buttons []
                            :inputs         [[::filter-content ::search! :_]]}
    })
+
+(def ui-starship-list (comp/factory StarshipList))

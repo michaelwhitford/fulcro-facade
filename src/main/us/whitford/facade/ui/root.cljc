@@ -34,8 +34,10 @@
 (defsc LandingPage [this props]
   {:query         ['*]
    :ident         (fn [] [:component/id ::LandingPage])
-   :initial-state {}}
-  (dom/div :.ui.header "Welcome to your new Application!"))
+   :initial-state {}
+   :route-segment ["landing-page"]
+   :use-hooks? true}
+  (dom/div :.ui.header "Welcome to Facade!"))
 
 ;; This will just be a normal router...but there can be many of them.
 (defrouter MainRouter [this {:keys [current-state route-factory route-props]}]
@@ -56,14 +58,14 @@
                    :ui/ready?
                    {:ui/search (comp/get-query Search)}
                    {:page/landing (comp/get-query LandingPage)}
-                   {:people (comp/get-query PersonList)}
+                   #_{:people (comp/get-query PersonList)}
                    ;; dynamic routing
                    ;;{:ui/router (comp/get-query MainRouter)}
                    ]
    :initial-state (fn [params] {:ui/ready? false
                                 :page/landing (comp/get-initial-state LandingPage)
                                 :ui/search (comp/get-initial-state Search)
-                                :people (comp/get-initial-state PersonList)
+                                #_#_:people (comp/get-initial-state PersonList)
                                 ; dynamic routing
                                 ;:ui/router {}
                                 })}
@@ -96,17 +98,23 @@
                    (ui-dropdown {:className "item" :text "Star Wars"}
                      (ui-dropdown-menu {}
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this FilmList {})
-                                                     (uir/route-to! this `FilmList {}))} (dom/i :.ui.film.icon " Films"))
+                                                     (uir/route-to! this `FilmList {}))}
+                         (dom/i :.compact.ui.left.floated.film.icon " Films"))
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this PersonList {})
-                                                     (uir/route-to! this `PersonList {}))} (dom/i :.ui.users.icon " People"))
+                                                     (uir/route-to! this `PersonList {}))}
+                         (dom/i :.compact.ui.left.floated.users.icon " People"))
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this PlanetList {})
-                                                     (uir/route-to! this `PlanetList {}))} (dom/i :.ui.globe.icon " Planets"))
+                                                     (uir/route-to! this `PlanetList {}))}
+                         (dom/i :.compact.ui.left.floated.globe.icon " Planets"))
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this SpeciesList {})
-                                                     (uir/route-to! this `SpeciesList {}))} (dom/i :.ui.hand.spock.icon " Species"))
+                                                     (uir/route-to! this `SpeciesList {}))}
+                         (dom/i :.compact.ui.left.floated.hand.spock.icon " Species"))
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this StarshipList {})
-                                                     (uir/route-to! this `StarshipList {}))} (dom/i :.ui.space.shuttle.icon " Starships"))
+                                                     (uir/route-to! this `StarshipList {}))}
+                         (dom/i :.compact.ui.left.floated.space.shuttle.icon " Starships"))
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this VehicleList {})
-                                                     (uir/route-to! this `VehicleList {}))} (dom/i :.ui.car.icon " Vehicles"))
+                                                     (uir/route-to! this `VehicleList {}))}
+                         (dom/i :.compacte.ui.left.floated.car.icon " Vehicles"))
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this SearchReport {})
                                                      (uir/route-to! this `SearchReport {}))} "Search")
                        ))
