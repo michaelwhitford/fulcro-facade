@@ -346,15 +346,14 @@
                                                          :else (new-uuid))]
                                                 #:entity{:id id :name n :type entitytype #_#_:entity m}))))) all)})))
 
-#?(:clj (def resolvers [all-people-resolver
-                        person-resolver
-                        #_load-person
+#?(:clj (def resolvers [all-people-resolver person-resolver
                         all-vehicles-resolver vehicle-resolver
                         all-starships-resolver starship-resolver
                         all-films-resolver film-resolver
                         all-species-resolver species-resolver
                         all-planets-resolver planet-resolver
                         all-entities-resolver
+                        #_load-person
                         #_search]))
 
 (comment
