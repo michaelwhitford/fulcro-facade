@@ -72,7 +72,7 @@
                                      :log-requests?  true
                                      :log-responses? true}
 
- :taoensso.timbre/logging-config    {:min-level :info}
+ :taoensso.timbre/logging-config    {:min-level :debug}
 
  :us.whitford.facade.components.swapi/config {:swagger-file "swapi.yml"
                                               :server-url "https://swapi.dev/api"}}

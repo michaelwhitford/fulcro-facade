@@ -4,7 +4,12 @@
     [org.httpkit.server :refer [run-server]]
     [taoensso.timbre :as log]
     [us.whitford.facade.components.config :refer [config]]
-    [us.whitford.facade.components.ring-middleware :refer [middleware]]))
+    [us.whitford.facade.components.ring-middleware :refer [middleware]]
+    [us.whitford.facade.components.statecharts :refer [statecharts]]))
+
+;; expose statecharts to the compiler so mount will autostart the state
+(comment
+  (:env statecharts))
 
 (defstate http-server
   :start

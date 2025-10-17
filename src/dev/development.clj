@@ -9,13 +9,15 @@
     [us.whitford.facade.components.database :refer [datomic-connections]]
     [us.whitford.facade.components.ring-middleware]
     [us.whitford.facade.components.server]
+    [us.whitford.facade.components.statecharts :refer [statecharts]]
     [us.whitford.facade.model.account :refer [new-account]]))
 
 ;; Prevent tools-ns from findinga source in other places, such as resources
 (set-refresh-dirs "src/main" "src/dev")
 
 (comment
-  (let [db (d/db (:main datomic-connections))]
+  (let [db (d/db (:main datomic-connections))
+        env (:env statecharts)]
     (d/pull db '[*] [:account/id (new-uuid 001)])))
 
 (defn seed! []
@@ -49,4 +51,5 @@
   (tools-ns/refresh :after 'development/start))
 
 (comment
+  (stop)
   (restart))
