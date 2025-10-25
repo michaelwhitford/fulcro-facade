@@ -74,7 +74,7 @@
 #?(:clj
    (defn swapi-step-fn
      "step function for paginated results"
-     [{:keys [iteration type opts final] :as data}]
+     [{:keys [iteration entitytype opts final] :as data}]
      (let [id-map {:people :person
                    :vehicles :vehicle
                    :films :film
@@ -83,62 +83,64 @@
                    :species :specie}
            allowed (set (keys id-map))
            {:keys [id search]} opts]
-       (when (some allowed [type]) ; invalid type will short circuit iteration
+       (when (some allowed [entitytype]) ; invalid type will short circuit iteration
              (if id ;  single-object
-                 (let [r @(martian/response-for swapi-martian (id-map type) opts)
-                       {:keys [status body]} r]
+                 (let [{:keys [status body]} @(martian/response-for swapi-martian (id-map entitytype) opts)]
                    (when (= 200 status)
                          {:iteration iteration
-                          :type type
+                          :entitytype entitytype
                           :opts opts
                           :final final
                           :next-token {:iteration (inc iteration)
-                                       :type :none ; next iteration fail from allowed type check
+                                       :entitytype :none ; next iteration fail from allowed type check
                                        :opts opts
                                        :final {:results [body]}}}))
                  ; search or all with possible pagination
-                 (let [r @(martian/response-for swapi-martian type opts)
+                 (let [r @(martian/response-for swapi-martian entitytype opts)
                        {:keys [status body]} r]
                    (when (= 200 status)
                          (let [{:keys [count next previous results]} body
                                page-size 10
                                max-iterations (int (ceil (/ count page-size)))]
                            (when (<= iteration max-iterations)
+                                 (Thread/sleep (+ 3000 (rand-int 4001)))
                                  {:iteration iteration
-                                  :type type
+                                  :entitytype entitytype
                                   :opts opts
                                   :final final
                                   :next-token {:iteration (inc iteration)
-                                               :type type
+                                               :entitytype entitytype
                                                :opts (if (nil? next)
                                                          opts
                                                          (assoc opts :page (swapi-page->number next)))
                                                :final body}})))))))))
 
 (comment
-  (swapi-step-fn {:iteration 1 :type :people :opts {:id "1"} :final {}}))
+  (swapi-step-fn {:iteration 1 :entitytype :people :opts {:id "1"} :final {}}))
 
 #?(:clj
    (defn get-swapi
      "get swapi object(s) from api"
-     [env {:keys [id search type] :as params}]
-     (let [swapi-opts (cond
-                        id (assoc {} :id (str id))
-                        search (assoc {} :search (str search))
-                        :else {})]
-       (tap> {:from ::get-swapi :env env :params params :swapi-opts swapi-opts})
+     [{:keys [id search entitytype] :as params}]
+     (let [swapi-opts (cond-> {}
+                              id (assoc :id (str id))
+                              search (assoc :search (str search)))]
+       (tap> {:from ::get-swapi :params params :swapi-opts swapi-opts})
        (vec (flatten (vec (iteration swapi-step-fn
                             :somef (fn [res]
-                                     (tap> {:from ::get-swapi-somef :res res})
+                                     #_(tap> {:from ::get-swapi-somef :res res})
                                      (some? (get-in res [:next-token :final :results])))
                             :vf (fn [res]
-                                  (tap> {:from ::get-swapi-vf :res res})
+                                  #_(tap> {:from ::get-swapi-vf :res res})
                                   (get-in res [:next-token :final :results]))
                             :kf :next-token
                             :initk {:iteration 1
-                                    :type type
+                                    :entitytype entitytype
                                     :opts swapi-opts
                                     :final {}})))))))
+
+(comment
+  (get-swapi {:entitytype :people}))
 
 #?(:clj
    (defn swapi-data
@@ -367,4 +369,5 @@
   (martian/explore swapi-martian :person)
   (martian/explore swapi-martian :characters)
   (martian/explore swapi-martian :vehicle)
-  (martian/explore swapi-martian :people))
+  (martian/explore swapi-martian :people)
+  (get-swapi {:entitytype :films}))

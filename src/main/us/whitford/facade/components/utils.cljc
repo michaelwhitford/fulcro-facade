@@ -114,9 +114,9 @@
    (try
      #?(:clj (Integer/parseInt s b)
         :cljs (let [i (js/parseInt s b)]
-                (cond
-                  (js/isNaN i) nil
-                  :else i)))
+                (if (js/isNaN i)
+                    nil
+                    i)))
      (catch #?(:clj NumberFormatException :cljs :default) e nil))))
 
 (comment
