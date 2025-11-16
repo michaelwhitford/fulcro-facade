@@ -38,7 +38,6 @@
            org.slf4j/jul-to-slf4j                 {:mvn/version "2.0.17"} ; auto sends java.util.logging to slf4j
            org.slf4j/jcl-over-slf4j               {:mvn/version "2.0.17"} ; auto-sends java.common.logging to slf4j
            com.fzakaria/slf4j-timbre              {:mvn/version "0.4.1"} ; hooks slf4j to timbre
-
            }
 
  :aliases {:test      {:extra-paths ["src/test"]
@@ -58,6 +57,7 @@
                        :ns-default build}
 
            :dev       {:extra-paths ["src/dev"]
+                       :jvm-opts ["-Drad.dev=true"]
                        :extra-deps  {org.clojure/tools.namespace {:mvn/version "1.5.0"}
                                      holyjak/fulcro-troubleshooting {:git/url "https://github.com/holyjak/fulcro-troubleshooting"
                                                                      ;; BEWARE: run `clojure -X:deps git-resolve-tags` to insert
