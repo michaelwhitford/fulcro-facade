@@ -23,23 +23,32 @@
   (martian/explore hpapi-martian :characters))
 
 #?(:clj
-   (defn hpapi-data [op {:keys [search] :as params}]
+   (defn hpapi-data
+     "Fetch data from Harry Potter API. Returns nil on error."
+     [op {:keys [search] :as params}]
      (let [op-map {:spells "spell"
                    :characters "character"}
            ops (set (keys op-map))]
        (when (some ops [op])
-         (let [search? (boolean search)
-               {:keys [body status]} @(martian/response-for hpapi-martian op params)]
-           (when (= 200 status)
-             (if search?
-               (->> (filterv #(let [name-match (when (:name %)
-                                                 (str/includes? (str/lower-case (:name %))
-                                                                (str/lower-case search)))]
-                                name-match)
-                             body)
-                    (mapv #(map->nsmap % (op-map op))))
-               (->> (vec body)
-                    (mapv #(map->nsmap % (op-map op)))))))))))
+         (try
+           (let [search? (boolean search)
+                 {:keys [body status]} @(martian/response-for hpapi-martian op params)]
+             (if (= 200 status)
+               (if search?
+                 (->> (filterv #(let [name-match (when (:name %)
+                                                   (str/includes? (str/lower-case (:name %))
+                                                                  (str/lower-case search)))]
+                                  name-match)
+                               body)
+                      (mapv #(map->nsmap % (op-map op))))
+                 (->> (vec body)
+                      (mapv #(map->nsmap % (op-map op)))))
+               (do
+                 (log/error "HPAPI API error" {:operation op :status status :body body})
+                 nil)))
+           (catch Exception e
+             (log/error e "Failed to fetch HPAPI data" {:operation op :params params})
+             nil))))))
 
 (comment
   (some #{:characters :spells} :spells)
@@ -49,10 +58,14 @@
    (pco/defresolver all-characters-resolver [{:keys [query-params] :as env} params]
      {::pco/output [{:hpapi/all-characters [:character/id :character/name :character/house
                                             :character/species :character/ancestry]}]}
-     (let [{:keys [search]} query-params
-           opts (cond-> {}
-                  search (assoc :search search))]
-       {:hpapi/all-characters (or (hpapi-data :characters opts) [])})))
+     (try
+       (let [{:keys [search]} query-params
+             opts (cond-> {}
+                    search (assoc :search search))]
+         {:hpapi/all-characters (or (hpapi-data :characters opts) [])})
+       (catch Exception e
+         (log/error e "Failed to resolve all-characters")
+         {:hpapi/all-characters []}))))
 
 #?(:clj
    (pco/defresolver character-resolver [{:keys [character/id] :as params}]
@@ -62,29 +75,47 @@
                     :character/ancestry :character/eyeColour :character/hairColour
                     :character/patronus :character/hogwartsStudent :character/hogwartsStaff
                     :character/actor :character/alive :character/image]}
-     (let [{:keys [body status]} @(martian/response-for hpapi-martian :characters {})]
-       (when (= 200 status)
-         (let [characters (mapv #(map->nsmap % "character") body)
-               character (first (filter #(= id (:character/id %)) characters))]
-           (dissoc character :character/id))))))
+     (try
+       (let [{:keys [body status]} @(martian/response-for hpapi-martian :characters {})]
+         (if (= 200 status)
+           (let [characters (mapv #(map->nsmap % "character") body)
+                 character (first (filter #(= id (:character/id %)) characters))]
+             (or (dissoc character :character/id) {}))
+           (do
+             (log/error "HPAPI character lookup error" {:id id :status status})
+             {})))
+       (catch Exception e
+         (log/error e "Failed to resolve character" {:id id})
+         {}))))
 
 #?(:clj
    (pco/defresolver all-spells-resolver [{:keys [query-params] :as env} params]
      {::pco/output [{:hpapi/all-spells [:spell/id :spell/name :spell/description]}]}
-     (let [{:keys [search]} query-params
-           opts (cond-> {}
-                  search (assoc :search search))]
-       {:hpapi/all-spells (or (hpapi-data :spells opts) [])})))
+     (try
+       (let [{:keys [search]} query-params
+             opts (cond-> {}
+                    search (assoc :search search))]
+         {:hpapi/all-spells (or (hpapi-data :spells opts) [])})
+       (catch Exception e
+         (log/error e "Failed to resolve all-spells")
+         {:hpapi/all-spells []}))))
 
 #?(:clj
    (pco/defresolver spell-resolver [{:keys [spell/id] :as params}]
      {::pco/input [:spell/id]
       ::pco/output [:spell/name :spell/description]}
-     (let [{:keys [body status]} @(martian/response-for hpapi-martian :spells {})]
-       (when (= 200 status)
-         (let [spells (mapv #(map->nsmap % "spell") body)
-               spell (first (filter #(= id (:spell/id %)) spells))]
-           (dissoc spell :spell/id))))))
+     (try
+       (let [{:keys [body status]} @(martian/response-for hpapi-martian :spells {})]
+         (if (= 200 status)
+           (let [spells (mapv #(map->nsmap % "spell") body)
+                 spell (first (filter #(= id (:spell/id %)) spells))]
+             (or (dissoc spell :spell/id) {}))
+           (do
+             (log/error "HPAPI spell lookup error" {:id id :status status})
+             {})))
+       (catch Exception e
+         (log/error e "Failed to resolve spell" {:id id})
+         {}))))
 
 #?(:clj (def resolvers [all-characters-resolver
                         character-resolver

@@ -23,23 +23,34 @@
 
 #?(:clj
    (defn get-all-accounts
+     "Fetch all accounts from database. Returns empty vector on error."
      [env query-params]
-     (if-let [db (some-> (get-in env [do/databases :production]) deref)]
-       (let [ids (map first
-                   (if (:show-inactive? query-params)
-                       (d/q [:find '?uuid
-                             :where
-                             ['?dbid :account/id '?uuid]] db)
-                       (d/q [:find '?uuid
-                             :where
-                             ['?dbid :account/active? true]
-                             ['?dbid :account/id '?uuid]] db)))]
-         (mapv (fn [id] {:account/id id}) ids))
-       (log/error "No database atom for production schema!"))))
+     (try
+       (if-let [db (some-> (get-in env [do/databases :production]) deref)]
+         (let [ids (map first
+                     (if (:show-inactive? query-params)
+                         (d/q [:find '?uuid
+                               :where
+                               ['?dbid :account/id '?uuid]] db)
+                         (d/q [:find '?uuid
+                               :where
+                               ['?dbid :account/active? true]
+                               ['?dbid :account/id '?uuid]] db)))]
+           (mapv (fn [id] {:account/id id}) ids))
+         (do
+           (log/error "No database atom for production schema!")
+           []))
+       (catch Exception e
+         (log/error e "Failed to fetch accounts from database")
+         []))))
 
 #?(:clj
    (pco/defresolver all-accounts-resolver [env params]
      {::pco/output [{:account/all-accounts [:account/id]}]}
-     {:account/all-accounts (get-all-accounts env params)}))
+     (try
+       {:account/all-accounts (or (get-all-accounts env params) [])}
+       (catch Exception e
+         (log/error e "Failed to resolve all-accounts")
+         {:account/all-accounts []}))))
 
 (def resolvers [all-accounts-resolver])
