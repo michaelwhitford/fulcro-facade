@@ -145,10 +145,15 @@
   ;; (history/install-route-history! app (new-html5-history {:app app :default-route {:route ["landing-page"]}}))
   (app/mount! app Root "app" {:initialize-state? false})
   (log/info "App mounted, starting routing...")
-  (uir/start-routing! app application-chart)
-  (log/info "Routing started, navigating to LandingPage...")
-  (uir/route-to! app `LandingPage)
-  (log/info "Navigation complete, setting application ready...")
+  (try
+    (uir/start-routing! app application-chart)
+    (log/info "Routing started, navigating to LandingPage...")
+    (uir/route-to! app `LandingPage)
+    (log/info "Navigation complete, setting application ready...")
+    (catch :default e
+      (log/error "Error during routing initialization:" e)
+      ;; Continue with app initialization despite routing error
+      (log/warn "Attempting to continue without full routing...")))
   ;; (hist5/restore-route! app LandingPage {})
   (ido (it/add-fulcro-inspect! app))
   (comp/transact! app [(application-ready {})])
