@@ -1,21 +1,21 @@
 (ns us.whitford.facade.ui.account-forms
   "Sample RAD-based components"
   (:require
-    #?(:clj  [com.fulcrologic.fulcro.dom-server :as dom :refer [div label input]]
-       :cljs [com.fulcrologic.fulcro.dom :as dom :refer [div label input]])
-    [clojure.string :as str]
-    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
-    [com.fulcrologic.fulcro.mutations :refer [defmutation]]
-    [com.fulcrologic.rad.control :as control]
-    [com.fulcrologic.rad.form :as form]
-    [com.fulcrologic.rad.form-options :as fo]
-    [com.fulcrologic.rad.report :as report]
-    [com.fulcrologic.rad.report-options :as ro]
-    [com.fulcrologic.rad.semantic-ui-options :as suo]
-    [com.fulcrologic.statecharts.integration.fulcro.rad-integration :as ri]
-    [taoensso.timbre :as log]
-    [us.whitford.facade.model-rad.account :as r.account]
-    [us.whitford.facade.ui.file-forms :refer [FileForm]]))
+   #?(:clj  [com.fulcrologic.fulcro.dom-server :as dom :refer [div label input]]
+      :cljs [com.fulcrologic.fulcro.dom :as dom :refer [div label input]])
+   [clojure.string :as str]
+   [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
+   [com.fulcrologic.fulcro.mutations :refer [defmutation]]
+   [com.fulcrologic.rad.control :as control]
+   [com.fulcrologic.rad.form :as form]
+   [com.fulcrologic.rad.form-options :as fo]
+   [com.fulcrologic.rad.report :as report]
+   [com.fulcrologic.rad.report-options :as ro]
+   [com.fulcrologic.rad.semantic-ui-options :as suo]
+   [com.fulcrologic.statecharts.integration.fulcro.rad-integration :as ri]
+   [taoensso.timbre :as log]
+   [us.whitford.facade.model-rad.account :as r.account]
+   [us.whitford.facade.ui.file-forms :refer [FileForm]]))
 
 (declare AccountList)
 
@@ -47,22 +47,21 @@
    :ident :account/id}
   (let [{:keys [edit-form entity-id]} (report/form-link report-instance props :account/email)]
     (dom/div :.item
-      (dom/i :.large.github.middle.aligned.icon)
-      (div :.content
-        (if edit-form
-            (dom/a :.header {:onClick (fn [] #_(form/edit! this edit-form entity-id)
-                                        (ri/edit! this AccountForm entity-id))} email)
-            (dom/div :.header email))
-        (dom/div :.description
-          (str (if active? "Active" "Inactive"))))))
+             (dom/i :.large.github.middle.aligned.icon)
+             (div :.content
+                  (if edit-form
+                    (dom/a :.header {:onClick (fn [] #_(form/edit! this edit-form entity-id)
+                                                (ri/edit! this AccountForm entity-id))} email)
+                    (dom/div :.header email))
+                  (dom/div :.description
+                           (str (if active? "Active" "Inactive"))))))
   #_(dom/tr
-      (dom/td :.right.aligned name)
-      (dom/td (str active?))))
+     (dom/td :.right.aligned name)
+     (dom/td (str active?))))
 
 (def ui-account-list-item (comp/factory AccountListItem))
 
-(report/defsc-report AccountList [this {:ui/keys [current-rows current-page page-count]
-                                        :as      props}]
+(report/defsc-report AccountList [this props]
   {ro/title               "All Accounts"
    ro/source-attribute    :account/all-accounts
    ro/row-pk              r.account/id
@@ -76,9 +75,9 @@
    ;::report/BodyItem                 AccountListItem
    suo/rendering-options  {suo/action-button-render (fn [this {:keys [key onClick label]}]
                                                       (when (= key ::new-account)
-                                                            (dom/button :.ui.tiny.basic.button {:onClick onClick}
-                                                              (dom/i {:className "icon user"})
-                                                              label)))
+                                                        (dom/button :.ui.tiny.basic.button {:onClick onClick}
+                                                                    (dom/i {:className "icon user"})
+                                                                    label)))
                            suo/body-class ""
                            suo/controls-class ""
                            suo/layout-class ""
@@ -95,15 +94,15 @@
    ro/column-formatters   {:account/email (fn [this v {:account/keys [id email]}]
                                             (dom/a {:onClick (fn [] #_(form/edit! this AccountForm id)
                                                                (ri/edit! this AccountForm id))}
-                                              (str email)))
+                                                   (str email)))
                            :account/active? (fn [this v] (if v "Yes" "No"))}
    ro/row-visible?        (fn [{::keys [filter-email]} {:account/keys [email]}]
                             (let [nm     (some-> email (str/lower-case))
                                   target (some-> filter-email (str/trim) (str/lower-case))]
                               (or
-                                (nil? target)
-                                (empty? target)
-                                (and nm (str/includes? nm target)))))
+                               (nil? target)
+                               (empty? target)
+                               (and nm (str/includes? nm target)))))
    ro/run-on-mount?       true
 
    ro/initial-sort-params {:sort-by          :account/email
@@ -154,15 +153,14 @@
    ro/route               "accounts"}
   #_(div
       ;(report/render-controls this)
-      (report/render-control this ::new-account)
-      (dom/button :.ui.green.button {:onClick (fn [] (form/create! this AccountForm))}
-        "Boo")
-      #_(div :.ui.form
-          (div :.field
-            (dom/label "Filter")
-            (report/render-control this ::filter-name)))
-      #_(dom/div :.ui.list
-          (mapv (fn [row]
-                  (ui-account-list-item row))
-            current-rows)))
-  )
+     (report/render-control this ::new-account)
+     (dom/button :.ui.green.button {:onClick (fn [] (form/create! this AccountForm))}
+                 "Boo")
+     #_(div :.ui.form
+            (div :.field
+                 (dom/label "Filter")
+                 (report/render-control this ::filter-name)))
+     #_(dom/div :.ui.list
+                (mapv (fn [row]
+                        (ui-account-list-item row))
+                      current-rows))))
