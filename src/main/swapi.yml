@@ -1,3 +1,4 @@
+---
 openapi: 3.0.0
 info:
   title: Star Wars API
@@ -37,38 +38,38 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Person"
-          created:
-            type: string
-          director:
-            type: string
-          edited:
-            type: string
-          episode_id:
-            type: integer
-          opening_crawl:
-            type: string
-          planets:
-            type: array
-            items:
-              $ref: "#/components/schemas/Planet"
-          producer:
-            type: string
-          release_date:
-            type: string
-          species:
-            type: array
-            items:
-              $ref: "#/components/schemas/Species"
-          starships:
-            type: array
-            items:
-              $ref: "#/components/schemas/Starship"
-          url:
-            type: string
-          vehicles:
-            type: array
-            items:
-              $ref: "#/components/schemas/Vehicle"
+        created:
+          type: string
+        director:
+          type: string
+        edited:
+          type: string
+        episode_id:
+          type: integer
+        opening_crawl:
+          type: string
+        planets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Planet"
+        producer:
+          type: string
+        release_date:
+          type: string
+        species:
+          type: array
+          items:
+            $ref: "#/components/schemas/Species"
+        starships:
+          type: array
+          items:
+            $ref: "#/components/schemas/Starship"
+        url:
+          type: string
+        vehicles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vehicle"
     Person:
       type: object
       required:

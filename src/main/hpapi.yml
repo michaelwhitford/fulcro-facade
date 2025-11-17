@@ -1,0 +1,129 @@
+---
+openapi: 3.0.0
+info:
+  title: Harry Potter API
+  description: custom spec for hp-api.onrender.com
+  version: "0.1"
+
+servers:
+  - url: "https://hp-api.onrender.com"
+    description: "Harry Potter API"
+
+components:
+  schemas:
+    Spell:
+      type: object
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+    Wand:
+      type: object
+      required:
+        - wood
+        - core
+        - length
+      properties:
+        wood:
+          type: string
+        core:
+          core: string
+        length:
+          type: int
+    Character:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        alternate_names:
+          type: array
+          items:
+            type: string
+        species:
+          type: string
+        gender:
+          type: string
+        house:
+          type: string
+        dateofBirth:
+          type: string
+        yearOfBirth:
+          type: string
+        wizard:
+          type: boolean
+        ancestry:
+          type: string
+        eyeColour:
+          type: string
+        hairColour:
+          type: string
+        wand:
+          $ref: "#/components/schemas/Wand"
+        patronus:
+          type: string
+        hogwartsStudent:
+          type: boolean
+        hogwartsStaff:
+          type: boolean
+        actor:
+          type: string
+        alternate_actors:
+          type: array
+          items:
+            type: string
+        alive:
+          type: boolean
+        image:
+          type: string
+
+  responses:
+    404Error:
+      description: Item not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+
+paths:
+  /characters/:
+    get:
+      summary: Return a list of characters
+      operationId: characters
+      responses:
+        "200":
+          description: A list of characters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Character"
+        "404":
+          $ref: "#/components/responses/404Error"
+
+  /spells/:
+    get:
+      summary: Return a list of spells
+      operationId: spells
+      responses:
+        "200":
+          description: A list of spells
+          content:
+            application/json:
+              type: array
+              items:
+                $ref: "#/components/schemas/Spell"

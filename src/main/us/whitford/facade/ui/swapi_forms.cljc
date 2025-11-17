@@ -21,7 +21,61 @@
     [us.whitford.facade.components.utils :refer [str->int]]
     [us.whitford.facade.model-rad.swapi :as rs]
     [us.whitford.facade.model.swapi :as m.swapi]
-    [us.whitford.facade.ui.file-forms :refer [FileForm]]))
+    [us.whitford.facade.ui.file-forms :refer [FileForm]])
+  #?(:cljs (:require-macros [us.whitford.facade.ui.swapi-forms])))
+
+;; Helper functions for server-side pagination
+(defn calculate-page-count
+  "Calculate total pages from total count and page size"
+  [total-count page-size]
+  (if (and total-count page-size (pos? page-size) (pos? total-count))
+    (int (Math/ceil (/ total-count page-size)))
+    1))
+
+(defn get-current-page-param
+  "Get the current page number from report parameters"
+  [this]
+  (or (control/current-value this ::page) 1))
+
+(defn get-total-count-from-state
+  "Get total count from root app state using the pagination metadata key"
+  [this total-count-key]
+  (let [state (comp/component->state-map this)]
+    (get state total-count-key 0)))
+
+(defn pagination-controls
+  "Create standard pagination controls for a SWAPI report"
+  [total-count-key]
+  {::page {:type :int
+           :local? true
+           :default-value 1}
+   ::prior-page {:type :button
+                 :label "← Prior"
+                 :disabled? (fn [this] (<= (get-current-page-param this) 1))
+                 :action (fn [this]
+                           (let [current-page (get-current-page-param this)
+                                 new-page (max 1 (dec current-page))]
+                             (control/set-parameter! this ::page new-page)
+                             (control/run! this {:page new-page})))}
+   ::next-page {:type :button
+                :label "Next →"
+                :disabled? (fn [this]
+                             (let [current-page (get-current-page-param this)
+                                   total-count (get-total-count-from-state this total-count-key)
+                                   page-count (calculate-page-count total-count 10)]
+                               (>= current-page page-count)))
+                :action (fn [this]
+                          (let [current-page (get-current-page-param this)
+                                new-page (inc current-page)]
+                            (control/set-parameter! this ::page new-page)
+                            (control/run! this {:page new-page})))}
+   ::page-info {:type :button
+                :label (fn [this]
+                         (let [current-page (get-current-page-param this)
+                               total-count (get-total-count-from-state this total-count-key)
+                               page-count (calculate-page-count total-count 10)]
+                           (str "Page " current-page " of " page-count " (" total-count " total)")))
+                :disabled? (constantly true)}})
 
 (defsc PersonQuery [_ _]
   {:query [:person/id :person/name]
@@ -142,6 +196,7 @@
    ro/source-attribute    :swapi/all-people
    ro/row-pk              rs/person_id
    ro/columns             [rs/person_name rs/person_birth_year rs/person_eye_color rs/person_mass]
+   ro/query-inclusions    [:swapi.people/total-count :swapi.people/current-page :swapi.people/page-size]
    ro/column-formatters   {:person/name (fn [this v {:person/keys [id] :as p}]
                                           (dom/a {:onClick #(ri/edit! this PersonForm id)} (str v)))}
    ro/row-visible? (fn [{::keys [filter-content]} {:person/keys [name]}]
@@ -157,19 +212,23 @@
    ro/initial-sort-params {:sort-by :person/id
                            :ascending? true
                            :sortable-columns #{:person/name :person/birth_year :person/mass :person/eye_color}}
-   ro/controls            {::refresh {:type :button
-                                      :label "Refresh"
-                                      :action (fn [this] (control/run! this))}
-                           ::search! {:type :button
-                                      :local? true
-                                      :label " Filter "
-                                      :class "ui red basic tiny button"
-                                      :action (fn [this _] (report/filter-rows! this))}
-                           ::filter-content {:type :string
-                                             :local? true
-                                             :placeholder " Type a partial person "
-                                             :onChange (fn [this _] (report/filter-rows! this))}}
-   ro/control-layout      {:action-buttons [::refresh]
+   ro/controls            (merge
+                            (pagination-controls :swapi.people/total-count)
+                            {::refresh {:type :button
+                                        :label "Refresh"
+                                        :action (fn [this]
+                                                  (let [current-page (get-current-page-param this)]
+                                                    (control/run! this {:page current-page})))}
+                             ::search! {:type :button
+                                        :local? true
+                                        :label " Filter "
+                                        :class "ui red basic tiny button"
+                                        :action (fn [this _] (report/filter-rows! this))}
+                             ::filter-content {:type :string
+                                               :local? true
+                                               :placeholder " Type a partial person "
+                                               :onChange (fn [this _] (report/filter-rows! this))}})
+   ro/control-layout      {:action-buttons [::refresh ::prior-page ::page-info ::next-page]
                            :inputs         [[::filter-content ::search!]
                                             [:_]]}
    suo/rendering-options {#_#_suo/report-table-class "ui very compact selectable table"
@@ -199,12 +258,13 @@
 
 (def ui-film-form (comp/factory FilmForm))
 
-(report/defsc-report FilmList [this {:ui/keys [current-rows current-page page-count] :as props}]
+(report/defsc-report FilmList [this props]
   {ro/title "All Films"
    ro/route "films"
    ro/source-attribute    :swapi/all-films
    ro/row-pk              rs/film_id
    ro/columns             [rs/film_title rs/film_director rs/film_release_date]
+   ro/query-inclusions    [:swapi.films/total-count :swapi.films/current-page :swapi.films/page-size]
    ro/column-formatters   {:film/title (fn [this _ {:film/keys [id title] :as params}]
                                          (dom/a {:onClick (fn [] (ri/edit! this FilmForm id))}
                                            (str title)))}
@@ -221,16 +281,23 @@
    ro/initial-sort-params {:sort-by :film/release_date
                            :ascending? true
                            :sortable-columns #{:film/title}}
-   ro/controls            {::search! {:type :button
-                                      :local? true
-                                      :label " Filter "
-                                      :class " ui basic compact mini red button "
-                                      :action (fn [this _] (report/filter-rows! this))}
-                           ::filter-content {:type :string
-                                             :local? true
-                                             :placeholder " Type a partial person "
-                                             :onChange (fn [this _] (report/filter-rows! this))}}
-   ro/control-layout      {:action-buttons []
+   ro/controls            (merge
+                            (pagination-controls :swapi.films/total-count)
+                            {::refresh {:type :button
+                                        :label "Refresh"
+                                        :action (fn [this]
+                                                  (let [current-page (get-current-page-param this)]
+                                                    (control/run! this {:page current-page})))}
+                             ::search! {:type :button
+                                        :local? true
+                                        :label " Filter "
+                                        :class " ui basic compact mini red button "
+                                        :action (fn [this _] (report/filter-rows! this))}
+                             ::filter-content {:type :string
+                                               :local? true
+                                               :placeholder " Type a partial film "
+                                               :onChange (fn [this _] (report/filter-rows! this))}})
+   ro/control-layout      {:action-buttons [::refresh ::prior-page ::page-info ::next-page]
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
@@ -251,12 +318,13 @@
 
 (def ui-planet-form (comp/factory PlanetForm))
 
-(report/defsc-report PlanetList [this {:ui/keys [current-rows current-page page-count] :as props}]
+(report/defsc-report PlanetList [this props]
   {ro/title "All Planets"
    ro/route "planets"
    ro/source-attribute    :swapi/all-planets
    ro/row-pk              rs/planet_id
    ro/columns             [rs/planet_name rs/planet_climate rs/planet_terrain]
+   ro/query-inclusions    [:swapi.planets/total-count :swapi.planets/current-page :swapi.planets/page-size]
    ro/column-formatters   {:planet/name (fn [this _ {:planet/keys [id name] :as params}]
                                           (dom/a {:onClick (fn [] (ri/edit! this PlanetForm id))}
                                             (str name)))}
@@ -273,16 +341,23 @@
    ro/initial-sort-params {:sort-by :planet/name
                            :ascending? true
                            :sortable-columns #{:planet/name}}
-   ro/controls            {::search! {:type :button
-                                      :local? true
-                                      :label " Filter "
-                                      :class " ui basic compact mini red button "
-                                      :action (fn [this _] (report/filter-rows! this))}
-                           ::filter-content {:type :string
-                                             :local? true
-                                             :placeholder " Type a partial person "
-                                             :onChange (fn [this _] (report/filter-rows! this))}}
-   ro/control-layout      {:action-buttons []
+   ro/controls            (merge
+                            (pagination-controls :swapi.planets/total-count)
+                            {::refresh {:type :button
+                                        :label "Refresh"
+                                        :action (fn [this]
+                                                  (let [current-page (get-current-page-param this)]
+                                                    (control/run! this {:page current-page})))}
+                             ::search! {:type :button
+                                        :local? true
+                                        :label " Filter "
+                                        :class " ui basic compact mini red button "
+                                        :action (fn [this _] (report/filter-rows! this))}
+                             ::filter-content {:type :string
+                                               :local? true
+                                               :placeholder " Type a partial planet "
+                                               :onChange (fn [this _] (report/filter-rows! this))}})
+   ro/control-layout      {:action-buttons [::refresh ::prior-page ::page-info ::next-page]
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
@@ -303,13 +378,14 @@
 
 (def ui-species-form (comp/factory SpeciesForm))
 
-(report/defsc-report SpeciesList [this {:ui/keys [current-rows current-page page-count] :as props}]
+(report/defsc-report SpeciesList [this props]
   {ro/title "All Species"
    ro/route "species"
    ro/source-attribute    :swapi/all-species
    ro/row-pk              rs/species_id
    ro/columns             [rs/species_name rs/species_classification rs/species_designation
                            rs/species_language]
+   ro/query-inclusions    [:swapi.species/total-count :swapi.species/current-page :swapi.species/page-size]
    ro/column-formatters   {:specie/name (fn [this _ {:specie/keys [id name] :as params}]
                                           (dom/a {:onClick (fn [] (ri/edit! this SpeciesForm id))}
                                             (str name)))}
@@ -326,16 +402,23 @@
    ro/initial-sort-params {:sort-by :specie/name
                            :ascending? true
                            :sortable-columns #{:specie/name :specie/classification :specie/designation}}
-   ro/controls            {::search! {:type :button
-                                      :local? true
-                                      :label " Filter "
-                                      :class " ui basic compact mini red button "
-                                      :action (fn [this _] (report/filter-rows! this))}
-                           ::filter-content {:type :string
-                                             :local? true
-                                             :placeholder " Type a partial person "
-                                             :onChange (fn [this _] (report/filter-rows! this))}}
-   ro/control-layout      {:action-buttons []
+   ro/controls            (merge
+                            (pagination-controls :swapi.species/total-count)
+                            {::refresh {:type :button
+                                        :label "Refresh"
+                                        :action (fn [this]
+                                                  (let [current-page (get-current-page-param this)]
+                                                    (control/run! this {:page current-page})))}
+                             ::search! {:type :button
+                                        :local? true
+                                        :label " Filter "
+                                        :class " ui basic compact mini red button "
+                                        :action (fn [this _] (report/filter-rows! this))}
+                             ::filter-content {:type :string
+                                               :local? true
+                                               :placeholder " Type a partial species "
+                                               :onChange (fn [this _] (report/filter-rows! this))}})
+   ro/control-layout      {:action-buttons [::refresh ::prior-page ::page-info ::next-page]
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
@@ -356,12 +439,13 @@
 
 (def ui-vehicle-form (comp/factory VehicleForm))
 
-(report/defsc-report VehicleList [this {:ui/keys [current-rows current-page page-count] :as props}]
+(report/defsc-report VehicleList [this props]
   {ro/title "All Vehicles"
    ro/route "vehicles"
    ro/source-attribute    :swapi/all-vehicles
    ro/row-pk              rs/vehicle_id
    ro/columns             [rs/vehicle_name rs/vehicle_model rs/vehicle_manufacturer]
+   ro/query-inclusions    [:swapi.vehicles/total-count :swapi.vehicles/current-page :swapi.vehicles/page-size]
    ro/column-formatters   {:vehicle/name (fn [this _ {:vehicle/keys [id name] :as params}]
                                            (dom/a {:onClick (fn [] (ri/edit! this VehicleForm id))}
                                              (str name)))}
@@ -378,16 +462,23 @@
    ro/initial-sort-params {:sort-by :vehicle/name
                            :ascending? true
                            :sortable-columns #{:vehicle/name :vehicle/model :vehicle/manufacturer}}
-   ro/controls            {::search! {:type :button
-                                      :local? true
-                                      :label " Filter "
-                                      :class " ui basic compact mini red button "
-                                      :action (fn [this _] (report/filter-rows! this))}
-                           ::filter-content {:type :string
-                                             :local? true
-                                             :placeholder " Type a partial person "
-                                             :onChange (fn [this _] (report/filter-rows! this))}}
-   ro/control-layout      {:action-buttons []
+   ro/controls            (merge
+                            (pagination-controls :swapi.vehicles/total-count)
+                            {::refresh {:type :button
+                                        :label "Refresh"
+                                        :action (fn [this]
+                                                  (let [current-page (get-current-page-param this)]
+                                                    (control/run! this {:page current-page})))}
+                             ::search! {:type :button
+                                        :local? true
+                                        :label " Filter "
+                                        :class " ui basic compact mini red button "
+                                        :action (fn [this _] (report/filter-rows! this))}
+                             ::filter-content {:type :string
+                                               :local? true
+                                               :placeholder " Type a partial vehicle "
+                                               :onChange (fn [this _] (report/filter-rows! this))}})
+   ro/control-layout      {:action-buttons [::refresh ::prior-page ::page-info ::next-page]
                            :inputs         [[::filter-content ::search! :_]]}
    })
 
@@ -409,12 +500,13 @@
 
 (def ui-starship-form (comp/factory StarshipForm))
 
-(report/defsc-report StarshipList [this {:ui/keys [current-rows current-page page-count] :as props}]
+(report/defsc-report StarshipList [this props]
   {ro/title "All Star Ships"
    ro/route "starships"
    ro/source-attribute    :swapi/all-starships
    ro/row-pk              rs/starship_id
    ro/columns             [rs/starship_name rs/starship_model rs/starship_manufacturer]
+   ro/query-inclusions    [:swapi.starships/total-count :swapi.starships/current-page :swapi.starships/page-size]
    ro/column-formatters   {:starship/name (fn [this _ {:starship/keys [id name] :as params}]
                                             (dom/a {:onClick (fn [] (ri/edit! this StarshipForm id))}
                                               (str name)))}
@@ -431,16 +523,23 @@
    ro/initial-sort-params {:sort-by :starship/name
                            :ascending? true
                            :sortable-columns #{:starship/name :starship/model :starship/manufacturer}}
-   ro/controls            {::search! {:type :button
-                                      :local? true
-                                      :label " Filter "
-                                      :class " ui basic compact mini red button "
-                                      :action (fn [this _] (report/filter-rows! this))}
-                           ::filter-content {:type :string
-                                             :local? true
-                                             :placeholder " Type a partial person "
-                                             :onChange (fn [this _] (report/filter-rows! this))}}
-   ro/control-layout      {:action-buttons []
+   ro/controls            (merge
+                            (pagination-controls :swapi.starships/total-count)
+                            {::refresh {:type :button
+                                        :label "Refresh"
+                                        :action (fn [this]
+                                                  (let [current-page (get-current-page-param this)]
+                                                    (control/run! this {:page current-page})))}
+                             ::search! {:type :button
+                                        :local? true
+                                        :label " Filter "
+                                        :class " ui basic compact mini red button "
+                                        :action (fn [this _] (report/filter-rows! this))}
+                             ::filter-content {:type :string
+                                               :local? true
+                                               :placeholder " Type a partial starship "
+                                               :onChange (fn [this _] (report/filter-rows! this))}})
+   ro/control-layout      {:action-buttons [::refresh ::prior-page ::page-info ::next-page]
                            :inputs         [[::filter-content ::search! :_]]}
    })
 

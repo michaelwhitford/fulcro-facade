@@ -27,6 +27,8 @@
     [taoensso.timbre :as log]
     [us.whitford.facade.application :refer [SPA]]
     [us.whitford.facade.ui.account-forms :refer [AccountForm AccountList]]
+    [us.whitford.facade.ui.hpapi-forms :refer [CharacterForm CharacterList
+                                               SpellForm SpellList]]
     [us.whitford.facade.ui.root :refer [LandingPage Root]]
     [us.whitford.facade.ui.search-forms :refer [SearchReport]]
     [us.whitford.facade.ui.swapi-forms :refer [PersonForm PersonList Person
@@ -88,6 +90,14 @@
                           :route/path    ["starship"]})
           (ri/report-state {:route/target `SearchReport
                             :route/path   ["search"]})
+          (ri/report-state {:route/target `CharacterList
+                            :route/path   ["characters"]})
+          (ri/form-state {:route/target `CharacterForm
+                          :route/path    ["character"]})
+          (ri/report-state {:route/target `SpellList
+                            :route/path   ["spells"]})
+          (ri/form-state {:route/target `SpellForm
+                          :route/path    ["spell"]})
           )))))
 
 (defonce app (-> (rad-app/fulcro-rad-app
@@ -112,7 +122,9 @@
 
 (m/defmutation application-ready [_]
   (action [{:keys [state]}]
-    (swap! state assoc :ui/ready? true)))
+    (log/info "Setting application ready state to true")
+    (swap! state assoc :ui/ready? true)
+    (log/info "Application ready state set")))
 
 (defn init []
   ;; makes js console logging a bit nicer
@@ -127,14 +139,17 @@
   (app/set-root! app Root {:initialize-state? true})
   (setup-RAD app)
   (scf/install-fulcro-statecharts! app)
-  (uir/start-routing! app application-chart)
-  #_(uir/start-routing! app application-chart)
-  (uir/route-to! app `LandingPage)
   ;; dynamic routing
   ;; (dr/initialize! app)
   ;; (dr/change-route! app ["landing-page"])
   ;; (history/install-route-history! app (new-html5-history {:app app :default-route {:route ["landing-page"]}}))
   (app/mount! app Root "app" {:initialize-state? false})
+  (log/info "App mounted, starting routing...")
+  (uir/start-routing! app application-chart)
+  (log/info "Routing started, navigating to LandingPage...")
+  (uir/route-to! app `LandingPage)
+  (log/info "Navigation complete, setting application ready...")
   ;; (hist5/restore-route! app LandingPage {})
   (ido (it/add-fulcro-inspect! app))
-  (comp/transact! app [(application-ready {})]))
+  (comp/transact! app [(application-ready {})])
+  (log/info "Application ready transaction submitted"))

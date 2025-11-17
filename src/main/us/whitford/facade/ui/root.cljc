@@ -21,6 +21,8 @@
     [com.fulcrologic.statecharts.integration.fulcro.ui-routes :as uir]
     [taoensso.timbre :as log]
     [us.whitford.facade.ui.account-forms :refer [AccountForm AccountList]]
+    [us.whitford.facade.ui.hpapi-forms :refer [CharacterList CharacterForm
+                                               SpellList SpellForm]]
     [us.whitford.facade.ui.search-forms :refer [Search ui-search SearchReport]]
     [us.whitford.facade.ui.swapi-forms :refer [PersonList PersonForm Person
                                                FilmList FilmForm
@@ -53,21 +55,17 @@
 (def ui-main-router (comp/factory MainRouter))
 
 (defsc Root [this {::app/keys [active-remotes]
-                   :ui/keys   [ready? search #_router]}]
+                   :ui/keys   [ready? search current-route]}]
   {:query         [::app/active-remotes (scf/statechart-session-ident uir/session-id)
                    :ui/ready?
                    {:ui/search (comp/get-query Search)}
-                   {:page/landing (comp/get-query LandingPage)}
-                   #_{:people (comp/get-query PersonList)}
-                   ;; dynamic routing
-                   ;;{:ui/router (comp/get-query MainRouter)}
+                   ;; The :ui/current-route will be dynamically updated by the statechart router
+                   ;; Start with a placeholder that will be replaced
+                   {:ui/current-route (comp/get-query LandingPage)}
                    ]
    :initial-state (fn [params] {:ui/ready? false
-                                :page/landing (comp/get-initial-state LandingPage)
                                 :ui/search (comp/get-initial-state Search)
-                                #_#_:people (comp/get-initial-state PersonList)
-                                ; dynamic routing
-                                ;:ui/router {}
+                                :ui/current-route {}
                                 })}
   (let [config (scf/current-configuration this uir/session-id)
         routing-blocked? (uir/route-denied? this)
@@ -118,6 +116,12 @@
                        (ui-dropdown-item {:onClick (fn [] #_(rroute/route-to! this SearchReport {})
                                                      (uir/route-to! this `SearchReport {}))} "Search")
                        ))
+                   (ui-dropdown {:className "item" :text "Harry Potter"}
+                     (ui-dropdown-menu {}
+                       (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `CharacterList {}))}
+                         (dom/i :.compact.ui.left.floated.user.icon " Characters"))
+                       (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `SpellList {}))}
+                         (dom/i :.compact.ui.left.floated.magic.icon " Spells"))))
                    (dom/div :.ui.right.menu
                      #_(dom/div :.ui.small.loader {:classes [(when busy? "active")]})
                      (dom/div :.ui.item

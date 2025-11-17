@@ -8,8 +8,7 @@
          :datomic/database "example"}}
 
  :roterski.fulcro.rad.database-adapters.xtdb/databases
- {:main {
-         ;; leave empty for in-memory xtdb
+ {:main {;; leave empty for in-memory xtdb
          ;; or uncomment a map below for postgres-based xtdb but first you need to manually create the fulcro-rad-demo db in postgres
          ;; this map is passed through symbolize-xtdb-modules (so you can store :xtdb/module values as strings)
          ;; and then passed directly into xtdb.api/start-node
@@ -75,4 +74,7 @@
  :taoensso.timbre/logging-config    {:min-level :debug}
 
  :us.whitford.facade.components.swapi/config {:swagger-file "swapi.yml"
-                                              :server-url "https://swapi.dev/api"}}
+                                              :server-url "https://swapi.dev/api"}
+
+ :us.whitford.facade.components.hpapi/config {:swagger-file "hpapi.yml"
+                                              :server-url "https://hp-api.onrender.com/api"}}
