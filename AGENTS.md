@@ -28,7 +28,7 @@ This query returns useful fulcro-rad diagnostic data
 (us.whitford.facade.components.parser {} [:radar/overview])
 ```
 
-This query returns the pathom-env available to resolvers
+This query returns a large amount of data from the pathom-env used by resolvers.
 
 ```clojure
 (us.whitford.facade.components.parser {} [:radar/pathom-env])

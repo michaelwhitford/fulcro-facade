@@ -236,30 +236,24 @@
 
 #?(:clj
    (pco/defresolver all-people-resolver [{:keys [query-params] :as env} params]
-     {::pco/output [{:swapi/all-people [:person/id :person/name :person/birth_year :person/eye_color
-                                        :person/films :person/gender :person/hair_color :person/height
-                                        :person/homeworld :person/mass :person/skin_color]}
-                    :swapi.people/total-count
-                    :swapi.people/current-page
-                    :swapi.people/page-size]}
+     {::pco/output [{:swapi/all-people [:total {:results [:person/id :person/name :person/birth_year :person/eye_color
+                                                          :person/films :person/gender :person/hair_color :person/height
+                                                          :person/homeworld :person/mass :person/skin_color]}]}]}
      (try
-       (let [{:keys [search page]} query-params
-             page-num (if (string? page) (str->int page) (or page 1))
+       (let [{:keys [search]} query-params
+             {:keys [limit offset]} (:indexed-access/options query-params)
+             ;; Convert offset/limit to page number (SWAPI uses 1-based pages of 10)
+             page-num (if offset (inc (quot offset 10)) 1)
              opts (cond-> {}
                     search (assoc :search search)
                     page-num (assoc :page page-num))
-             {:keys [results total-count current-page page-size]} (swapi-data-paginated :people opts)]
-             (tap> {:from ::all-people-resolver :pathom-env env})
-         {:swapi/all-people (or results [])
-          :swapi.people/total-count (or total-count 0)
-          :swapi.people/current-page (or current-page 1)
-          :swapi.people/page-size (or page-size 10)})
+             {:keys [results total-count]} (swapi-data-paginated :people opts)]
+         {:swapi/all-people {:results (or results [])
+                             :total (or total-count 0)}})
        (catch Exception e
          (log/error e "Failed to resolve all-people")
-         {:swapi/all-people []
-          :swapi.people/total-count 0
-          :swapi.people/current-page 1
-          :swapi.people/page-size 10}))))
+         {:swapi/all-people {:results []
+                             :total 0}}))))
 
 #?(:clj
    (pco/defresolver person-resolver [env {:person/keys [id] :as params}]
@@ -274,29 +268,23 @@
 
 #?(:clj
    (pco/defresolver all-vehicles-resolver [{:keys [query-params] :as env} params]
-     {::pco/output [{:swapi/all-vehicles [:vehicle/id :vehicle/name :vehicle/cargo_capacity :vehicle/consumables
-                                          :vehicle/cost_in_credits :vehicle/crew :vehicle/films :vehicle/model
-                                          :vehicle/manufacturer :vehicle/passengers :vehicle/pilots]}
-                    :swapi.vehicles/total-count
-                    :swapi.vehicles/current-page
-                    :swapi.vehicles/page-size]}
+     {::pco/output [{:swapi/all-vehicles [:total {:results [:vehicle/id :vehicle/name :vehicle/cargo_capacity :vehicle/consumables
+                                                            :vehicle/cost_in_credits :vehicle/crew :vehicle/films :vehicle/model
+                                                            :vehicle/manufacturer :vehicle/passengers :vehicle/pilots]}]}]}
      (try
-       (let [{:keys [search page]} query-params
-             page-num (if (string? page) (str->int page) (or page 1))
+       (let [{:keys [search]} query-params
+             {:keys [limit offset]} (:indexed-access/options query-params)
+             page-num (if offset (inc (quot offset 10)) 1)
              opts (cond-> {}
                     search (assoc :search search)
                     page-num (assoc :page page-num))
-             {:keys [results total-count current-page page-size]} (swapi-data-paginated :vehicles opts)]
-         {:swapi/all-vehicles (or results [])
-          :swapi.vehicles/total-count (or total-count 0)
-          :swapi.vehicles/current-page (or current-page 1)
-          :swapi.vehicles/page-size (or page-size 10)})
+             {:keys [results total-count]} (swapi-data-paginated :vehicles opts)]
+         {:swapi/all-vehicles {:results (or results [])
+                               :total (or total-count 0)}})
        (catch Exception e
          (log/error e "Failed to resolve all-vehicles")
-         {:swapi/all-vehicles []
-          :swapi.vehicles/total-count 0
-          :swapi.vehicles/current-page 1
-          :swapi.vehicles/page-size 10}))))
+         {:swapi/all-vehicles {:results []
+                               :total 0}}))))
 
 #?(:clj
    (pco/defresolver vehicle-resolver [env {:vehicle/keys [id] :as params}]
@@ -312,30 +300,24 @@
 #?(:clj
    (pco/defresolver all-starships-resolver [{:keys [query-params] :as env} params]
      {::pco/output [{:swapi/all-starships
-                     [:starship/id :starship/name :starship/cargo_capacity :starship/consumables
-                      :starship/cost_in_credits :starship/crew :starship/films :starship/hyperdrive_rating
-                      :starship/length :starship/manufacturer :starship/max_atmosphering_speed
-                      :starship/model :starship/passengers :starship/pilots :starship/class]}
-                    :swapi.starships/total-count
-                    :swapi.starships/current-page
-                    :swapi.starships/page-size]}
+                     [:total {:results [:starship/id :starship/name :starship/cargo_capacity :starship/consumables
+                                        :starship/cost_in_credits :starship/crew :starship/films :starship/hyperdrive_rating
+                                        :starship/length :starship/manufacturer :starship/max_atmosphering_speed
+                                        :starship/model :starship/passengers :starship/pilots :starship/class]}]}]}
      (try
-       (let [{:keys [search page]} query-params
-             page-num (if (string? page) (str->int page) (or page 1))
+       (let [{:keys [search]} query-params
+             {:keys [limit offset]} (:indexed-access/options query-params)
+             page-num (if offset (inc (quot offset 10)) 1)
              opts (cond-> {}
                     search (assoc :search search)
                     page-num (assoc :page page-num))
-             {:keys [results total-count current-page page-size]} (swapi-data-paginated :starships opts)]
-         {:swapi/all-starships (or results [])
-          :swapi.starships/total-count (or total-count 0)
-          :swapi.starships/current-page (or current-page 1)
-          :swapi.starships/page-size (or page-size 10)})
+             {:keys [results total-count]} (swapi-data-paginated :starships opts)]
+         {:swapi/all-starships {:results (or results [])
+                                :total (or total-count 0)}})
        (catch Exception e
          (log/error e "Failed to resolve all-starships")
-         {:swapi/all-starships []
-          :swapi.starships/total-count 0
-          :swapi.starships/current-page 1
-          :swapi.starships/page-size 10}))))
+         {:swapi/all-starships {:results []
+                                :total 0}}))))
 
 #?(:clj
    (pco/defresolver starship-resolver [env {:starship/keys [id] :as params}]
@@ -351,29 +333,23 @@
 
 #?(:clj
    (pco/defresolver all-films-resolver [{:keys [query-params] :as env} params]
-     {::pco/output [{:swapi/all-films [:film/id :film/title :film/characters :film/director :film/episode_id
-                                       :film/opening_crawl :film/planets :film/producer :film/release_date
-                                       :film/species :film/starships :film/vehicles]}
-                    :swapi.films/total-count
-                    :swapi.films/current-page
-                    :swapi.films/page-size]}
+     {::pco/output [{:swapi/all-films [:total {:results [:film/id :film/title :film/characters :film/director :film/episode_id
+                                                         :film/opening_crawl :film/planets :film/producer :film/release_date
+                                                         :film/species :film/starships :film/vehicles]}]}]}
      (try
-       (let [{:keys [search page]} query-params
-             page-num (if (string? page) (str->int page) (or page 1))
+       (let [{:keys [search]} query-params
+             {:keys [limit offset]} (:indexed-access/options query-params)
+             page-num (if offset (inc (quot offset 10)) 1)
              opts (cond-> {}
                     search (assoc :search search)
                     page-num (assoc :page page-num))
-             {:keys [results total-count current-page page-size]} (swapi-data-paginated :films opts)]
-         {:swapi/all-films (or results [])
-          :swapi.films/total-count (or total-count 0)
-          :swapi.films/current-page (or current-page 1)
-          :swapi.films/page-size (or page-size 10)})
+             {:keys [results total-count]} (swapi-data-paginated :films opts)]
+         {:swapi/all-films {:results (or results [])
+                            :total (or total-count 0)}})
        (catch Exception e
          (log/error e "Failed to resolve all-films")
-         {:swapi/all-films []
-          :swapi.films/total-count 0
-          :swapi.films/current-page 1
-          :swapi.films/page-size 10}))))
+         {:swapi/all-films {:results []
+                            :total 0}}))))
 
 #?(:clj
    (pco/defresolver film-resolver [env {:film/keys [id] :as params}]
@@ -388,30 +364,24 @@
 
 #?(:clj
    (pco/defresolver all-species-resolver [{:keys [query-params] :as env} params]
-     {::pco/output [{:swapi/all-species [:specie/id :specie/name :specie/average_height :specie/average_lifespan
-                                         :specie/classification :specie/designation :specie/eye_colors :specie/films
-                                         :specie/hair_colors :specie/homeworld :specie/language :specie/people
-                                         :specie/skin_colors]}
-                    :swapi.species/total-count
-                    :swapi.species/current-page
-                    :swapi.species/page-size]}
+     {::pco/output [{:swapi/all-species [:total {:results [:specie/id :specie/name :specie/average_height :specie/average_lifespan
+                                                           :specie/classification :specie/designation :specie/eye_colors :specie/films
+                                                           :specie/hair_colors :specie/homeworld :specie/language :specie/people
+                                                           :specie/skin_colors]}]}]}
      (try
-       (let [{:keys [search page]} query-params
-             page-num (if (string? page) (str->int page) (or page 1))
+       (let [{:keys [search]} query-params
+             {:keys [limit offset]} (:indexed-access/options query-params)
+             page-num (if offset (inc (quot offset 10)) 1)
              opts (cond-> {}
                     search (assoc :search search)
                     page-num (assoc :page page-num))
-             {:keys [results total-count current-page page-size]} (swapi-data-paginated :species opts)]
-         {:swapi/all-species (or results [])
-          :swapi.species/total-count (or total-count 0)
-          :swapi.species/current-page (or current-page 1)
-          :swapi.species/page-size (or page-size 10)})
+             {:keys [results total-count]} (swapi-data-paginated :species opts)]
+         {:swapi/all-species {:results (or results [])
+                              :total (or total-count 0)}})
        (catch Exception e
          (log/error e "Failed to resolve all-species")
-         {:swapi/all-species []
-          :swapi.species/total-count 0
-          :swapi.species/current-page 1
-          :swapi.species/page-size 10}))))
+         {:swapi/all-species {:results []
+                              :total 0}}))))
 
 #?(:clj
    (pco/defresolver species-resolver [env {:specie/keys [id] :as params}]
@@ -427,29 +397,23 @@
 
 #?(:clj
    (pco/defresolver all-planets-resolver [{:keys [query-params] :as env} params]
-     {::pco/output [{:swapi/all-planets [:planet/id :planet/name :planet/climate :planet/gravity
-                                         :planet/diameter :planet/orbital_period :planet/population
-                                         :planet/rotation_period :planet/terrain]}
-                    :swapi.planets/total-count
-                    :swapi.planets/current-page
-                    :swapi.planets/page-size]}
+     {::pco/output [{:swapi/all-planets [:total {:results [:planet/id :planet/name :planet/climate :planet/gravity
+                                                           :planet/diameter :planet/orbital_period :planet/population
+                                                           :planet/rotation_period :planet/terrain]}]}]}
      (try
-       (let [{:keys [search page]} query-params
-             page-num (if (string? page) (str->int page) (or page 1))
+       (let [{:keys [search]} query-params
+             {:keys [limit offset]} (:indexed-access/options query-params)
+             page-num (if offset (inc (quot offset 10)) 1)
              opts (cond-> {}
                     search (assoc :search search)
                     page-num (assoc :page page-num))
-             {:keys [results total-count current-page page-size]} (swapi-data-paginated :planets opts)]
-         {:swapi/all-planets (or results [])
-          :swapi.planets/total-count (or total-count 0)
-          :swapi.planets/current-page (or current-page 1)
-          :swapi.planets/page-size (or page-size 10)})
+             {:keys [results total-count]} (swapi-data-paginated :planets opts)]
+         {:swapi/all-planets {:results (or results [])
+                              :total (or total-count 0)}})
        (catch Exception e
          (log/error e "Failed to resolve all-planets")
-         {:swapi/all-planets []
-          :swapi.planets/total-count 0
-          :swapi.planets/current-page 1
-          :swapi.planets/page-size 10}))))
+         {:swapi/all-planets {:results []
+                              :total 0}}))))
 
 #?(:clj
    (pco/defresolver planet-resolver [env {:planet/keys [id] :as params}]
