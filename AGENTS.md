@@ -101,28 +101,57 @@ Configuration is managed centrally with:
 
 ### Testing Guidelines
 
-- All tests use **fulcro-spec** with **clojure.test**
-- Test files use `.cljc` extension for cross-platform compatibility
-- Use `deftest` for top-level test definitions
-- Use `assertions` or `behavior` blocks for grouping related assertions
-- Use `=>` for assertions instead of `is`
-- For predicates, call them and assert true: `(string? x) => true` not `x => string?`
-- `let` bindings must be outside `assertions` blocks
-- Cannot use `=>` inside `doseq` - use regular `is` instead
-- Common patterns:
-  ```clojure
-  (ns my-namespace-test
-    (:require
-     [clojure.test :refer [deftest is]]
-     [fulcro-spec.core :refer [assertions =>]]))
+All tests use **fulcro-spec** with **clojure.test** (not pure clojure.test or specification-based tests).
 
-  (deftest feature-test
-    (assertions "does something specific"
-      (+ 1 1) => 2
-      (count [1 2 3]) => 3)
-    
-    (let [result {:name "test"}]
-      (assertions "checks predicates"
-        (map? result) => true
-        (:name result) => "test")))
-  ```
+**Key Rules:**
+- Test files use `.cljc` extension for cross-platform compatibility
+- Use `deftest` for top-level test definitions (NOT `specification`)
+- Use `assertions` blocks for grouping assertions within a deftest
+- Use `=>` for assertions (preferred over `is` when possible)
+- `let` bindings MUST be outside `assertions` blocks
+- For predicates, call them and assert true: `(string? x) => true` NOT `x => string?`
+- Cannot use `=>` inside `doseq` loops - use regular `is` instead
+- Use reader conditionals `#?(:clj ...)` for platform-specific tests (e.g., file I/O)
+
+**Common Patterns:**
+
+```clojure
+(ns my-namespace-test
+  (:require
+   [clojure.test :refer [deftest is]]
+   [fulcro-spec.core :refer [assertions =>]]))
+
+;; Basic assertions
+(deftest simple-test
+  (assertions "does something specific"
+    (+ 1 1) => 2
+    (count [1 2 3]) => 3))
+
+;; Let bindings outside assertions
+(deftest with-data-test
+  (let [result {:name "test" :value 42}]
+    (assertions "checks predicates and values"
+      (map? result) => true           ;; predicate: call it, assert true
+      (:name result) => "test"         ;; value: direct comparison
+      (:value result) => 42)))
+
+;; Doseq loops require regular is
+(deftest loop-test
+  (let [test-cases [["input1" "expected1"]
+                    ["input2" "expected2"]]]
+    (doseq [[input expected] test-cases]
+      (is (= expected (my-fn input)) (str "Failed for: " input)))))
+
+;; Platform-specific tests
+#?(:clj
+   (deftest clj-only-test
+     (assertions "uses JVM-only features"
+       (slurp (io/resource "file.txt")) => string?)))
+```
+
+**Common Mistakes to Avoid:**
+- ❌ Using `specification` instead of `deftest`
+- ❌ Using `behavior` as top-level (use in `deftest` only if needed)
+- ❌ Putting `let` inside `assertions`: `(assertions (let [x 1] x => 1))`
+- ❌ Using predicate as value: `result => map?` (should be `(map? result) => true`)
+- ❌ Using `=>` inside `doseq` (use `is` instead)
