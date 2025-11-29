@@ -85,6 +85,29 @@
     :planet "globe"
     "question"))
 
+(defsc SearchResultRow [this props]
+  {:query [:entity/id :entity/name :entity/type]
+   :ident (fn [] [:entity/id (:entity/id props)])}
+  (let [{:entity/keys [id name type]} props
+        id-map {:person   PersonForm
+                :film     FilmForm
+                :vehicle  VehicleForm
+                :starship StarshipForm
+                :specie   SpeciesForm
+                :planet   PlanetForm}
+        matches (re-matches #"^.*-(\d+)$" id)
+        edit-id (last matches)]
+    (dom/div :.ui.segment {:style {:marginBottom "10px"}}
+      (dom/div :.ui.header
+        (dom/i {:className (str "ui " (entity-type-icon type) " icon")})
+        (dom/a {:style {:cursor "pointer"}
+                :onClick (fn [] (when edit-id
+                                  (ri/edit! (comp/any->app this) (id-map type) edit-id)))}
+          name))
+      (dom/div :.ui.label (str/capitalize (name type))))))
+
+(def ui-search-result-row (comp/factory SearchResultRow {:keyfn :entity/id}))
+
 (report/defsc-report SearchReport [this props]
   {ro/title "SWAPI Cross-Entity Search"
    ro/route "search"
@@ -171,23 +194,7 @@
                                     edit-id (last matches)]
                                 (when edit-id
                                   (ri/edit! (comp/any->app this) (id-map type) edit-id))))}]
-   ro/BodyItem (fn [this {:entity/keys [id name type] :as _row-props}]
-                 (let [id-map {:person   PersonForm
-                               :film     FilmForm
-                               :vehicle  VehicleForm
-                               :starship StarshipForm
-                               :specie   SpeciesForm
-                               :planet   PlanetForm}
-                       matches (re-matches #"^.*-(\d+)$" id)
-                       edit-id (last matches)]
-                   (dom/div :.ui.segment {:style {:marginBottom "10px"}}
-                     (dom/div :.ui.header
-                       (dom/i {:className (str "ui " (entity-type-icon type) " icon")})
-                       (dom/a {:style {:cursor "pointer"}
-                               :onClick (fn [] (when edit-id
-                                                 (ri/edit! (comp/any->app this) (id-map type) edit-id)))}
-                         name))
-                     (dom/div :.ui.label (str/capitalize (name type))))))
+   ro/BodyItem SearchResultRow
    })
 
 (def ui-searchreport (comp/factory SearchReport))

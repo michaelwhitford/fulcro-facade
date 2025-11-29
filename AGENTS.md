@@ -1,8 +1,43 @@
 # AGENTS.md
 
+project checked out at: /Users/mwhitford/src/facade
+
 ## Overview
 
 Facade provides a client for multiple backend apis using fulcro and fulcro-rad.
+
+Use a single PLAN.md for planning. Use a single CHANGELOG.md for changes. Do not create summary documents.
+
+The clj-nrepl-eval tool should have access to both a clj and cljs nrepl for this project, use them as needed to fulfill user requests.
+The app should have a clj and cljs repl started from the editor.
+
+App restarts can be accomplished from the repl:
+
+```clojure
+(require 'development)
+(development/restart)
+```
+
+## Diagnostic Tools & Docmentation
+
+**ALWAYS start troubleshooting with RADAR**
+
+This query returns useful fulcro-rad diagnostic data
+
+```clojure
+(us.whitford.facade.components.parser {} [:radar/overview])
+```
+
+This query returns the pathom-env available to resolvers
+
+```clojure
+(us.whitford.facade.components.parser {} [:radar/pathom-env])
+```
+
+## Build & Test Commands
+
+- **Lint and Run tests:** `clj-kondo --lint . && clojure -M:run-tests`
+- **Check outdated deps:** `clojure -M:outdated`
 
 ## Purpose
 
@@ -48,20 +83,6 @@ Configuration is managed centrally with:
 - Hot-reload capabilities for configuration changes
 - Validation of configuration parameters
 - Fallback mechanisms for missing settings
-
-## Running tests
-
-You can run tests from the repository base directory in bash like this:
-
-```
-clojure -M:dev:test:cljs:run-tests
-```
-
-### Unit Testing
-
-### Integration Testing
-
-### Performance Testing
 
 ### Development Guidelines
 

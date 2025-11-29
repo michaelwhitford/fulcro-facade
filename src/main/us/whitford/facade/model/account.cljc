@@ -53,4 +53,21 @@
          (log/error e "Failed to resolve all-accounts")
          {:account/all-accounts []}))))
 
-(def resolvers [all-accounts-resolver])
+#?(:clj
+   (pco/defresolver account-count-resolver
+     "Count total accounts in the database.
+      RADAR will auto-discover and use this resolver for entity counts!"
+     [env _]
+     {::pco/output [:account/count]}
+     (try
+       (if-let [db (some-> (get-in env [do/databases :production]) deref)]
+         (let [result (d/q '[:find ?e
+                             :where [?e :account/id]]
+                           db)]
+           {:account/count (count result)})
+         {:account/count 0})
+       (catch Exception e
+         (log/error e "Failed to count accounts")
+         {:account/count nil}))))
+
+(def resolvers [all-accounts-resolver account-count-resolver])

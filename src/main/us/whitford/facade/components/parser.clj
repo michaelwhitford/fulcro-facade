@@ -18,7 +18,8 @@
    ;; Require namespaces that define resolvers
    [us.whitford.facade.model.account :as m.account]
    [us.whitford.facade.model.hpapi :as m.hpapi]
-   [us.whitford.facade.model.swapi :as m.swapi]))
+   [us.whitford.facade.model.swapi :as m.swapi]
+   [us.whitford.fulcro-radar.api :as radar]))
 
 (def all-resolvers
   "The list of all hand-written resolvers/mutations."
@@ -31,9 +32,11 @@
   (let [env-middleware (-> (attr/wrap-env all-attributes)
                            (form/wrap-env save/middleware delete/middleware)
                            (common/wrap-env (fn [env] {:production (:main datomic-connections)}) d/db)
-                           (blob/wrap-env bs/temporary-blob-store {:files bs/file-blob-store}))]
+                           (blob/wrap-env bs/temporary-blob-store {:files bs/file-blob-store})
+                           (radar/wrap-env {:ui-ns 'us.whitford.facade.ui.root}))]
     (pathom3/new-processor config env-middleware []
                            [automatic-resolvers
                             form/resolvers
                             (blob/resolvers all-attributes)
+                            radar/resolvers
                             all-resolvers])))

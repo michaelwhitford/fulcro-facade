@@ -38,6 +38,7 @@
            org.slf4j/jul-to-slf4j                 {:mvn/version "2.0.17"} ; auto sends java.util.logging to slf4j
            org.slf4j/jcl-over-slf4j               {:mvn/version "2.0.17"} ; auto-sends java.common.logging to slf4j
            com.fzakaria/slf4j-timbre              {:mvn/version "0.4.1"} ; hooks slf4j to timbre
+           us.whitford/fulcro-radar               {:local/root "/Users/mwhitford/src/fulcro-radar"}
            }
 
  :aliases {:test      {:extra-paths ["src/test"]

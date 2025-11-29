@@ -249,6 +249,7 @@
                     search (assoc :search search)
                     page-num (assoc :page page-num))
              {:keys [results total-count current-page page-size]} (swapi-data-paginated :people opts)]
+             (tap> {:from ::all-people-resolver :pathom-env env})
          {:swapi/all-people (or results [])
           :swapi.people/total-count (or total-count 0)
           :swapi.people/current-page (or current-page 1)
@@ -502,14 +503,14 @@
            searchable-types [:people :vehicles :planets :species :starships]
            ;; Films don't support search, need client-side filtering
            non-searchable-types [:films]
-           
+
            ;; Build opts for searchable types
            search-opts (if (and search-term (not (str/blank? search-term)))
                          {:search search-term}
                          {})
-           
+
            ;; Fetch searchable types with search param (in parallel)
-           searchable-futures (doall 
+           searchable-futures (doall
                                 (map (fn [ent-type]
                                        (future (try
                                                  (swapi-data ent-type search-opts)
@@ -517,7 +518,7 @@
                                                    (log/warn "Failed to fetch" ent-type e)
                                                    []))))
                                      searchable-types))
-           
+
            ;; Fetch non-searchable types without search param
            non-searchable-futures (doall
                                     (map (fn [ent-type]
@@ -527,23 +528,23 @@
                                                        (log/warn "Failed to fetch" ent-type e)
                                                        []))))
                                          non-searchable-types))
-           
+
            ;; Wait for all results
            searchable-results (mapcat deref searchable-futures)
            non-searchable-results (mapcat deref non-searchable-futures)
-           
+
            ;; Filter non-searchable results client-side if search term provided
            filtered-non-searchable (if (and search-term (not (str/blank? search-term)))
                                      (let [search-lower (str/lower-case search-term)]
                                        (filter (fn [entity]
-                                                 (let [name-field (or (:film/title entity) 
+                                                 (let [name-field (or (:film/title entity)
                                                                       (:film/name entity)
                                                                       "")]
-                                                   (str/includes? (str/lower-case (str name-field)) 
+                                                   (str/includes? (str/lower-case (str name-field))
                                                                   search-lower)))
                                                non-searchable-results))
                                      non-searchable-results)]
-       
+
        (concat searchable-results filtered-non-searchable))))
 
 #?(:clj

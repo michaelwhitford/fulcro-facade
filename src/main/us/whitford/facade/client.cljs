@@ -37,7 +37,8 @@
                                                SpeciesForm SpeciesList
                                                VehicleForm VehicleList
                                                StarshipForm StarshipList]]
-    [us.whitford.facade.ui.toast :as toast]))
+    [us.whitford.facade.ui.toast :as toast]
+    [us.whitford.fulcro-radar.api :as radar]))
 
 (defn setup-RAD [app]
   (rad-app/install-ui-controls! app sui/all-controls)
@@ -115,6 +116,10 @@
   ;; hot code reload of installed controls
   (log/info "Reinstalling controls")
   (setup-RAD app)
+  ;; Ensure statecharts are installed on refresh
+  (when-not (::scf/statechart-registry app)
+    (log/info "Reinstalling statecharts registry")
+    (scf/install-fulcro-statecharts! app))
   (uir/update-chart! app application-chart)
   #_(comp/refresh-dynamic-queries! app)
   (app/force-root-render! app))
@@ -139,6 +144,7 @@
   (app/set-root! app Root {:initialize-state? true})
   (setup-RAD app)
   (scf/install-fulcro-statecharts! app)
+  (log/info "Statecharts installed:" (boolean (::scf/statechart-registry app)))
   ;; dynamic routing
   ;; (dr/initialize! app)
   ;; (dr/change-route! app ["landing-page"])
@@ -150,11 +156,16 @@
     (log/info "Routing started, navigating to LandingPage...")
     (uir/route-to! app `LandingPage)
     (log/info "Navigation complete, setting application ready...")
+    (comp/transact! app [(application-ready {})])
+    (log/info "Application ready transaction submitted")
     (catch :default e
       (log/error "Error during routing initialization:" e)
-      ;; Continue with app initialization despite routing error
-      (log/warn "Attempting to continue without full routing...")))
+      ;; Still mark as ready so user can see something rather than infinite loading
+      (comp/transact! app [(application-ready {})])
+      (log/warn "Application marked ready despite routing error")))
   ;; (hist5/restore-route! app LandingPage {})
-  (ido (it/add-fulcro-inspect! app))
-  (comp/transact! app [(application-ready {})])
-  (log/info "Application ready transaction submitted"))
+  (ido (it/add-fulcro-inspect! app)))
+
+(comment
+  (radar/send-diagnostic! SPA)
+  )
