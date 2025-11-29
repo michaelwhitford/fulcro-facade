@@ -1,157 +1,96 @@
 # AGENTS.md
 
-project checked out at: /Users/mwhitford/src/facade
+fulcro rad + fulcro radar app
+Use PLAN.md for planning
+Use CHANGELOG.md for changes
+Update PLAN.md as you go to save progress
 
-## Overview
+## REPL Setup
 
-Facade provides a client for multiple backend apis using fulcro and fulcro-rad.
-
-Use a single PLAN.md for planning. Use a single CHANGELOG.md for changes. Do not create summary documents.
-
-The clj-nrepl-eval tool should have access to both a clj and cljs nrepl for this project, use them as needed to fulfill user requests.
-The app should have a clj and cljs repl started from the editor.
-
-App restarts can be accomplished from the repl:
+Setup parser once per session (auto-discovers namespace via mount):
 
 ```clojure
-(require 'development)
-(development/restart)
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
 ```
 
-## Diagnostic Tools & Docmentation
-
-**ALWAYS start troubleshooting with RADAR**
-
-This query returns useful fulcro-rad diagnostic data
+Inspect client state from CLJS repl:
 
 ```clojure
-(us.whitford.facade.components.parser {} [:radar/overview])
+;; Get app namespace from radar (in CLJ repl first)
+(-> (p {} [:radar/overview]) :radar/overview :radar/app-ns)
+;; => us.whitford.facade  (SPA is at <app-ns>.application/SPA)
+
+;; Then in CLJS repl, require and inspect
+(require '[com.fulcrologic.fulcro.application :as fulcro-app])
+(require '[<app-ns>.application :as app])  ;; e.g. us.whitford.facade.application
+(keys @(::fulcro-app/state-atom @app/SPA))
 ```
 
-This query returns a large amount of data from the pathom-env used by resolvers.
+## Diagnostics (via fulcro-radar)
+
+Quick status: `(-> (p {} [:radar/overview]) :radar/overview :radar/summary)`
+
+Radar keys from `(p {} [:radar/overview])`:
+
+- `:radar/summary` - mount states, attr count, entity/form/report counts
+- `:radar/forms` - name, route, id-key, attributes, query
+- `:radar/reports` - name, route, source resolver, row-pk, columns
+- `:radar/entities` - name, fields, id-key, id-type, attributes (queryable field names)
+- `:radar/references` - from/to/cardinality relationships
+- `:radar/issues` - detected problems (empty = good)
+
+Radar keys from `(p {} [:radar/pathom-env])`:
+
+- `:resolvers` - `:root` (EQL entry points), `:entity` (by-id), `:derived`
+- `:mutations` - available mutations with params/output
+- `:capabilities` - what's available (parser, datomic, blob-stores)
+
+## EQL Queries
+
+Root resolver output determines query key. Find available resolvers:
 
 ```clojure
-(us.whitford.facade.components.parser {} [:radar/pathom-env])
+;; Root resolvers (EQL entry points)
+(->> (p {} [:radar/pathom-env]) :radar/pathom-env :resolvers :root (map (juxt :name :output)))
+
+;; Entity resolvers (by-id lookups) - shows required input keys
+(->> (p {} [:radar/pathom-env]) :radar/pathom-env :resolvers :entity (map (juxt :name :input)))
 ```
 
-## Build & Test Commands
-
-- **Lint and Run tests:** `clj-kondo --lint . && clojure -M:run-tests`
-- **Check outdated deps:** `clojure -M:outdated`
-
-## Purpose
-
-Facade implements a fulcro-rad "skin" over multiple back end apis.
-
-- **SWAPI**: The Star Wars API [https://swapi.dev](https://swapi.dev) - mostly working
-- **Harry Potter**: The Harry Potter API [https://hp-api.onrender.com/](https://hp-api.onrender.com/) - TODO
-
-## Core APIs
-
-### 1. Starwars (SWAPI)
-
-**Purpose**: Handle all operations related to the Star Wars API (SWAPI)
-
-**Capabilities**:
-
-- films
-- people
-- starships
-- vehicles
-- planets
-- species
-
-### 2. Harry Potter (HPAPI)
-
-**Purpose**: Handle all operations related to the Harry Potter API (HWAPI)
-
-**Capabilities**:
-
-- characters
-
-  - students
-  - staff
-  - house
-
-- spells
-
-## Configuration Management
-
-Configuration is managed centrally with:
-
-- Hierarchical configuration merging
-- Hot-reload capabilities for configuration changes
-- Validation of configuration parameters
-- Fallback mechanisms for missing settings
-
-### Development Guidelines
-
-1. **Single Responsibility**: Each piece should have a clear, single responsibility
-2. **Loose Coupling**: Pieces should minimize dependencies on each other
-3. **Well-Defined Interfaces**: Use clear, consistent interfaces for piece communication
-4. **Error Resilience**: Code should handle errors gracefully and provide meaningful feedback
-5. **Performance Awareness**: Code should be designed with readability and performance both in mind
-
-### Code Organization
-
-- Code should be well-organized and modular
-- Common functionality should be extracted to shared libraries
-- Documentation should be comprehensive and up-to-date
-- Configuration should be externalized
-
-### Testing Guidelines
-
-All tests use **fulcro-spec** with **clojure.test** (not pure clojure.test or specification-based tests).
-
-**Key Rules:**
-- Test files use `.cljc` extension for cross-platform compatibility
-- Use `deftest` for top-level test definitions (NOT `specification`)
-- Use `assertions` blocks for grouping assertions within a deftest
-- Use `=>` for assertions (preferred over `is` when possible)
-- `let` bindings MUST be outside `assertions` blocks
-- For predicates, call them and assert true: `(string? x) => true` NOT `x => string?`
-- Cannot use `=>` inside `doseq` loops - use regular `is` instead
-- Use reader conditionals `#?(:clj ...)` for platform-specific tests (e.g., file I/O)
-
-**Common Patterns:**
+Join queries must be vector-wrapped (substitute actual resolver/attribute names):
 
 ```clojure
-(ns my-namespace-test
-  (:require
-   [clojure.test :refer [deftest is]]
-   [fulcro-spec.core :refer [assertions =>]]))
+;; Correct - vector-wrapped join (use actual resolver output key from :root)
+(p {} [{:example/all-items [:item/id :item/name]}])
 
-;; Basic assertions
-(deftest simple-test
-  (assertions "does something specific"
-    (+ 1 1) => 2
-    (count [1 2 3]) => 3))
+;; Simple key query (no subselection)
+(p {} [:example/all])
 
-;; Let bindings outside assertions
-(deftest with-data-test
-  (let [result {:name "test" :value 42}]
-    (assertions "checks predicates and values"
-      (map? result) => true           ;; predicate: call it, assert true
-      (:name result) => "test"         ;; value: direct comparison
-      (:value result) => 42)))
-
-;; Doseq loops require regular is
-(deftest loop-test
-  (let [test-cases [["input1" "expected1"]
-                    ["input2" "expected2"]]]
-    (doseq [[input expected] test-cases]
-      (is (= expected (my-fn input)) (str "Failed for: " input)))))
-
-;; Platform-specific tests
-#?(:clj
-   (deftest clj-only-test
-     (assertions "uses JVM-only features"
-       (slurp (io/resource "file.txt")) => string?)))
+;; Entity lookup by ID (ident pattern - use actual entity id-key and UUID)
+(p {} [{[:item/id "actual-uuid-here"]
+        [:item/name :item/field1 :item/field2]}])
 ```
 
-**Common Mistakes to Avoid:**
-- ❌ Using `specification` instead of `deftest`
-- ❌ Using `behavior` as top-level (use in `deftest` only if needed)
-- ❌ Putting `let` inside `assertions`: `(assertions (let [x 1] x => 1))`
-- ❌ Using predicate as value: `result => map?` (should be `(map? result) => true`)
-- ❌ Using `=>` inside `doseq` (use `is` instead)
+## RAD Gotchas
+
+- **Ident**: Use `:ident :id-key` shorthand, not closures
+- **Report stuck**: Check `:ui/cache :filtered-rows`, trigger `(uism/trigger! @SPA ident :event/loaded)`
+
+## Restart
+
+```cljs
+(require 'development)(development/restart)
+```
+
+## Operations
+
+```bash
+clojure -M:run-tests # kaocha tests
+clj-kondo --lint . # clj-kondo lint
+clojure -M:outdated # check dependencies
+```
+
+## Tests
+
+`.cljc` files with fulcro-spec. `let` bindings outside `assertions` block, use `=>` operator.
