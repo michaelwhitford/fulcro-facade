@@ -98,3 +98,31 @@ Configuration is managed centrally with:
 - Common functionality should be extracted to shared libraries
 - Documentation should be comprehensive and up-to-date
 - Configuration should be externalized
+
+### Testing Guidelines
+
+- All tests use **fulcro-spec** with **clojure.test**
+- Test files use `.cljc` extension for cross-platform compatibility
+- Use `deftest` for top-level test definitions
+- Use `assertions` or `behavior` blocks for grouping related assertions
+- Use `=>` for assertions instead of `is`
+- For predicates, call them and assert true: `(string? x) => true` not `x => string?`
+- `let` bindings must be outside `assertions` blocks
+- Cannot use `=>` inside `doseq` - use regular `is` instead
+- Common patterns:
+  ```clojure
+  (ns my-namespace-test
+    (:require
+     [clojure.test :refer [deftest is]]
+     [fulcro-spec.core :refer [assertions =>]]))
+
+  (deftest feature-test
+    (assertions "does something specific"
+      (+ 1 1) => 2
+      (count [1 2 3]) => 3)
+    
+    (let [result {:name "test"}]
+      (assertions "checks predicates"
+        (map? result) => true
+        (:name result) => "test")))
+  ```

@@ -1,138 +1,133 @@
 (ns us.whitford.facade.components.utils-test
   (:require
-   [clojure.test :refer [deftest testing is]]
+   [clojure.test :refer [deftest]]
+   [fulcro-spec.core :refer [assertions =>]]
    [us.whitford.facade.components.utils :as utils]))
 
-(deftest test-map->nsmap
-  (testing "adds namespace to simple keyword keys"
-    (let [input {:id "1" :name "Luke"}]
-      (is (= {:person/id "1" :person/name "Luke"}
-             (utils/map->nsmap input "person")))))
+(deftest map->nsmap-test
+  (let [input {:id "1" :name "Luke"}]
+    (assertions "adds namespace to simple keyword keys"
+      (utils/map->nsmap input "person") => {:person/id "1" :person/name "Luke"}))
 
-  (testing "preserves non-keyword keys"
-    (let [input {"string-key" "value" :keyword-key "other"}]
-      (is (= {"string-key" "value" :ns/keyword-key "other"}
-             (utils/map->nsmap input "ns")))))
+  (let [input {"string-key" "value" :keyword-key "other"}]
+    (assertions "preserves non-keyword keys"
+      (utils/map->nsmap input "ns") => {"string-key" "value" :ns/keyword-key "other"}))
 
-  (testing "handles empty map"
-    (is (= {} (utils/map->nsmap {} "person"))))
+  (assertions "handles empty map"
+    (utils/map->nsmap {} "person") => {})
 
-  (testing "preserves already namespaced keywords"
-    (let [input {:person/id "1" :name "Luke"}]
-      (is (= {:person/id "1" :test/name "Luke"}
-             (utils/map->nsmap input "test")))))
+  (let [input {:person/id "1" :name "Luke"}]
+    (assertions "preserves already namespaced keywords"
+      (utils/map->nsmap input "test") => {:person/id "1" :test/name "Luke"}))
 
-  (testing "handles nested values correctly"
-    (let [input {:id "1" :data {:nested "value"}}]
-      (is (= {:person/id "1" :person/data {:nested "value"}}
-             (utils/map->nsmap input "person"))))))
+  (let [input {:id "1" :data {:nested "value"}}]
+    (assertions "handles nested values correctly"
+      (utils/map->nsmap input "person") => {:person/id "1" :person/data {:nested "value"}})))
 
-(deftest test-map->deepnsmap
-  (testing "namespaces all keyword keys recursively"
-    (let [input {:id "1" :data {:nested "value" :deep {:key "val"}}}]
-      (is (= {:person/id "1" :person/data {:person/nested "value" :person/deep {:person/key "val"}}}
-             (utils/map->deepnsmap input "person")))))
+(deftest map->deepnsmap-test
+  (let [input {:id "1" :data {:nested "value" :deep {:key "val"}}}]
+    (assertions "namespaces all keyword keys recursively"
+      (utils/map->deepnsmap input "person") => {:person/id "1" :person/data {:person/nested "value" :person/deep {:person/key "val"}}}))
 
-  (testing "handles empty map"
-    (is (= {} (utils/map->deepnsmap {} "person"))))
+  (assertions "handles empty map"
+    (utils/map->deepnsmap {} "person") => {})
 
-  (testing "handles vectors of maps"
-    (let [input {:items [{:name "one"} {:name "two"}]}]
-      (is (= {:item/items [{:item/name "one"} {:item/name "two"}]}
-             (utils/map->deepnsmap input "item"))))))
+  (let [input {:items [{:name "one"} {:name "two"}]}]
+    (assertions "handles vectors of maps"
+      (utils/map->deepnsmap input "item") => {:item/items [{:item/name "one"} {:item/name "two"}]})))
 
-(deftest test-str->int
-  (testing "parses valid integer strings"
-    (is (= 10 (utils/str->int "10")))
-    (is (= 0 (utils/str->int "0")))
-    (is (= -5 (utils/str->int "-5")))
-    (is (= 999 (utils/str->int "999"))))
+(deftest str->int-test
+  (assertions "parses valid integer strings"
+    (utils/str->int "10") => 10
+    (utils/str->int "0") => 0
+    (utils/str->int "-5") => -5
+    (utils/str->int "999") => 999)
 
-  (testing "returns nil for invalid input"
-    (is (nil? (utils/str->int "blah")))
-    (is (nil? (utils/str->int "not-a-number")))
-    (is (nil? (utils/str->int ""))))
+  (assertions "returns nil for invalid input"
+    (utils/str->int "blah") => nil
+    (utils/str->int "not-a-number") => nil
+    (utils/str->int "") => nil)
 
-  (testing "returns nil for nil input"
-    (is (nil? (utils/str->int nil))))
-  
+  (assertions "returns nil for nil input"
+    (utils/str->int nil) => nil)
+
   ;; Note: str->int throws for non-string types like vectors and maps
   ;; This is expected behavior - callers should ensure string input
 
-  (testing "parses with different bases"
-    (is (= 16 (utils/str->int "10" 16)))
-    (is (= 255 (utils/str->int "ff" 16)))
-    (is (= 7 (utils/str->int "111" 2)))))
+  (assertions "parses with different bases"
+    (utils/str->int "10" 16) => 16
+    (utils/str->int "ff" 16) => 255
+    (utils/str->int "111" 2) => 7))
 
-(deftest test-update-in-contains
-  (testing "updates when key path exists"
-    (let [m {:a {:b 1}}]
-      (is (= {:a {:b 2}} (utils/update-in-contains m [:a :b] inc)))))
+(deftest update-in-contains-test
+  (let [m {:a {:b 1}}]
+    (assertions "updates when key path exists"
+      (utils/update-in-contains m [:a :b] inc) => {:a {:b 2}}))
 
-  (testing "leaves map unchanged when key path does not exist"
-    (let [m {:a {:b 1}}]
-      (is (= {:a {:b 1}} (utils/update-in-contains m [:a :c] inc)))
-      (is (= {:a {:b 1}} (utils/update-in-contains m [:x :y] inc)))))
+  (let [m {:a {:b 1}}]
+    (assertions "leaves map unchanged when key path does not exist"
+      (utils/update-in-contains m [:a :c] inc) => {:a {:b 1}}
+      (utils/update-in-contains m [:x :y] inc) => {:a {:b 1}}))
 
-  (testing "handles top-level keys"
-    (let [m {:a 1}]
-      (is (= {:a 2} (utils/update-in-contains m [:a] inc)))))
+  (let [m {:a 1}]
+    (assertions "handles top-level keys"
+      (utils/update-in-contains m [:a] inc) => {:a 2}))
 
-  (testing "handles nested structures"
-    (let [m {:films ["1" "2" "3"]}]
-      (is (= {:films 3} (utils/update-in-contains m [:films] count))))))
+  (let [m {:films ["1" "2" "3"]}]
+    (assertions "handles nested structures"
+      (utils/update-in-contains m [:films] count) => {:films 3})))
 
-(deftest test-b64encode-and-decode
-  (testing "encodes and decodes round-trip"
-    (is (= "Hello World" (utils/b64decode (utils/b64encode "Hello World"))))
-    (is (= "Test123!@#" (utils/b64decode (utils/b64encode "Test123!@#")))))
+(deftest b64encode-and-decode-test
+  (assertions "encodes and decodes round-trip"
+    (utils/b64decode (utils/b64encode "Hello World")) => "Hello World"
+    (utils/b64decode (utils/b64encode "Test123!@#")) => "Test123!@#")
 
-  (testing "encodes empty string"
-    (is (string? (utils/b64encode ""))))
+  (assertions "encodes empty string"
+    (string? (utils/b64encode "")) => true)
 
-  (testing "handles special characters"
-    (is (= "🌟🚀" (utils/b64decode (utils/b64encode "🌟🚀"))))))
+  (assertions "handles special characters"
+    (utils/b64decode (utils/b64encode "🌟🚀")) => "🌟🚀"))
 
-(deftest test-url-encode
-  (testing "encodes spaces"
-    (is (string? (utils/url-encode "hello world"))))
+(deftest url-encode-test
+  (assertions "encodes spaces"
+    (string? (utils/url-encode "hello world")) => true)
 
-  (testing "encodes special characters"
-    (let [encoded (utils/url-encode "Phoenix,AZ")]
-      (is (string? encoded))
-      (is (not= "Phoenix,AZ" encoded)))))
+  (let [encoded (utils/url-encode "Phoenix,AZ")]
+    (assertions "encodes special characters"
+      (string? encoded) => true
+      (not= "Phoenix,AZ" encoded) => true)))
 
-(deftest test-ip->hex
-  (testing "converts IP to hex format"
-    (is (= "0a0a0a01" (utils/ip->hex "10.10.10.1")))
-    (is (= "c0a80001" (utils/ip->hex "192.168.0.1")))
-    (is (= "ffffffff" (utils/ip->hex "255.255.255.255")))
-    (is (= "00000000" (utils/ip->hex "0.0.0.0")))))
+(deftest ip->hex-test
+  (assertions "converts IP to hex format"
+    (utils/ip->hex "10.10.10.1") => "0a0a0a01"
+    (utils/ip->hex "192.168.0.1") => "c0a80001"
+    (utils/ip->hex "255.255.255.255") => "ffffffff"
+    (utils/ip->hex "0.0.0.0") => "00000000"))
 
-(deftest test-hex->ip
-  (testing "converts hex back to IP"
-    (is (= "10.10.10.1" (utils/hex->ip "0a0a0a01")))
-    (is (= "192.168.0.1" (utils/hex->ip "c0a80001")))
-    (is (= "255.255.255.255" (utils/hex->ip "ffffffff")))
-    (is (= "0.0.0.0" (utils/hex->ip "00000000"))))
+(deftest hex->ip-test
+  (assertions "converts hex back to IP"
+    (utils/hex->ip "0a0a0a01") => "10.10.10.1"
+    (utils/hex->ip "c0a80001") => "192.168.0.1"
+    (utils/hex->ip "ffffffff") => "255.255.255.255"
+    (utils/hex->ip "00000000") => "0.0.0.0")
 
-  (testing "round-trip conversion"
-    (is (= "10.10.10.1" (utils/hex->ip (utils/ip->hex "10.10.10.1"))))
-    (is (= "192.168.0.1" (utils/hex->ip (utils/ip->hex "192.168.0.1"))))))
+  (assertions "round-trip conversion"
+    (utils/hex->ip (utils/ip->hex "10.10.10.1")) => "10.10.10.1"
+    (utils/hex->ip (utils/ip->hex "192.168.0.1")) => "192.168.0.1"))
 
-(deftest test-now
-  (testing "returns a number"
-    (is (number? (utils/now))))
+(deftest now-test
+  (assertions "returns a number"
+    (number? (utils/now)) => true)
 
-  (testing "returns positive value"
-    (is (pos? (utils/now)))))
+  (assertions "returns positive value"
+    (pos? (utils/now)) => true))
 
-(deftest test-json->data
-  (testing "parses JSON string with keyword keys"
-    (let [json-str "{\"name\":\"Luke\",\"age\":25}"]
-      (is (= {:name "Luke" :age 25} (utils/json->data json-str)))))
+(deftest json->data-test
+  (let [json-str "{\"name\":\"Luke\",\"age\":25}"]
+    (assertions "parses JSON string with keyword keys"
+      (utils/json->data json-str) => {:name "Luke" :age 25}))
 
-  (testing "returns non-string input unchanged"
-    (is (= {:already "data"} (utils/json->data {:already "data"})))
-    (is (= nil (utils/json->data nil)))
-    (is (= 123 (utils/json->data 123)))))
+  (assertions "returns non-string input unchanged"
+    (utils/json->data {:already "data"}) => {:already "data"}
+    (utils/json->data nil) => nil
+    (utils/json->data 123) => 123))
