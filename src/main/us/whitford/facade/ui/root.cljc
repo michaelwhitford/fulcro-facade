@@ -42,7 +42,56 @@
    :initial-state {}
    :route-segment ["landing-page"]
    :use-hooks? true}
-  (dom/div :.ui.header "Welcome to Facade!"))
+  (dom/div {}
+    (dom/h1 :.ui.header 
+      (dom/i :.robot.icon)
+      (dom/div :.content 
+        "Facade"
+        (dom/div :.sub.header "A self-building Fulcro RAD application")))
+    
+    (dom/div :.ui.three.stackable.cards {:style {:marginTop "2em"}}
+      ;; APIs Card
+      (dom/div :.ui.card
+        (dom/div :.content
+          (dom/div :.header (dom/i :.database.icon) " Integrated APIs")
+          (dom/div :.description
+            (dom/div :.ui.list
+              (dom/div :.item (dom/i :.star.icon) " Star Wars (SWAPI)")
+              (dom/div :.item (dom/i :.magic.icon) " Harry Potter")
+              (dom/div :.item (dom/i :.map.marker.icon) " IP Geolocation")
+              (dom/div :.item (dom/i :.cloud.icon) " Weather Forecast")))))
+      
+      ;; Features Card
+      (dom/div :.ui.card
+        (dom/div :.content
+          (dom/div :.header (dom/i :.cogs.icon) " Built With")
+          (dom/div :.description
+            (dom/div :.ui.list
+              (dom/div :.item (dom/i :.react.icon) " Fulcro + RAD")
+              (dom/div :.item (dom/i :.project.diagram.icon) " Pathom3 Resolvers")
+              (dom/div :.item (dom/i :.exchange.icon) " Martian HTTP Clients")
+              (dom/div :.item (dom/i :.sitemap.icon) " Statechart Routing")))))
+      
+      ;; Games Card  
+      (dom/div :.ui.card
+        (dom/div :.content
+          (dom/div :.header (dom/i :.gamepad.icon) " Toast Games")
+          (dom/div :.description
+            (dom/p {} "Try the games in the top-right menu!")
+            (dom/div :.ui.list
+              (dom/div :.item (dom/i :.bullseye.icon) " Whack-a-Toast!")
+              (dom/div :.item (dom/i :.th.icon) " Tic-Tac-Toast!"))))))
+    
+    (dom/div :.ui.message {:style {:marginTop "2em"}}
+      (dom/div :.header "🤖 AI-Assisted Development")
+      (dom/p {} 
+        "This app is designed to be extended by AI agents. Point an AI at the repo and say "
+        (dom/em {} "\"add support for X API\"")
+        " — and it works.")
+      (dom/p {}
+        "See "
+        (dom/code {} "AGENTS.md")
+        " for the integration guide."))))
 
 
 
