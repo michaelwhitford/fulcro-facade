@@ -79,7 +79,21 @@ See `INTEGRATION_GUIDE.md` for step-by-step instructions on integrating a new ex
 
 Plus updates to: `config/defaults.edn`, `model_rad/attributes.cljc`, `components/parser.clj`, `ui/root.cljc`
 
+## Framework Understanding
+
+**New to Fulcro RAD?** Read these framework guides to understand concepts:
+
+| Document | When to Read | Learn |
+| -------- | ------------ | ----- |
+| `FULCRO-RAD.md` | Working with forms/reports | RAD lifecycle, attributes, pickers, form options |
+| `PATHOM.md` | Writing resolvers | Input/output semantics, query planning, error handling |
+| `FULCRO.md` | Understanding app structure | Normalization, idents, queries, state management |
+
+These explain **why** patterns work, not just **how** to use them.
+
 ## See Also
+
+### Project Documentation
 
 | Document               | Purpose                                                             |
 | ---------------------- | ------------------------------------------------------------------- |

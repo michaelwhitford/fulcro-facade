@@ -23,6 +23,71 @@ Essential patterns and commands for working with Facade.
 | UI (CLJC) | `src/main/us/whitford/facade/ui/*.cljc` | `swapi_forms.cljc` |
 | Config | `src/main/config/*.edn` | `defaults.edn` |
 
+## Component Types - When to Use What
+
+| Type | Use When | Provides | See |
+|------|----------|----------|-----|
+| `defsc` | Custom UI, no CRUD | Manual state management | FULCRO.md |
+| `defsc-form` | Editing single entity | Save/cancel, validation, dirty tracking | FULCRO-RAD.md |
+| `defsc-report` | Showing list of entities | Filter, sort, pagination | FULCRO-RAD.md |
+
+**Decision flowchart**:
+- Need a list of data? → `defsc-report`
+- Need to edit an entity? → `defsc-form`  
+- Need custom behavior? → `defsc`
+
+## Common Pitfalls
+
+### 1. Ident as Function
+❌ **DON'T**:
+```clojure
+:ident (fn [] [:entity/id (:entity/id props)])
+```
+
+✅ **DO**:
+```clojure
+:ident :entity/id
+```
+
+**Why**: Normalization happens before props are available. See FULCRO.md for details.
+
+### 2. Picker Options Format
+❌ **DON'T**:
+```clojure
+po/options-xform (fn [_ opts] opts)  ; Return raw data
+```
+
+✅ **DO**:
+```clojure
+po/options-xform (fn [_ opts]
+                   (mapv #(hash-map :text (:name %)
+                                    :value [:thing/id (:id %)])
+                         opts))
+```
+
+**Why**: Pickers need `{:text "Display" :value [:id key]}` format. See FULCRO-RAD.md for details.
+
+### 3. Always Return Map from Resolvers
+❌ **DON'T**:
+```clojure
+(pco/defresolver person-resolver [{:person/keys [id]}]
+  {::pco/output [:person/name]}
+  (fetch-person id))  ; Might return nil!
+```
+
+✅ **DO**:
+```clojure
+(pco/defresolver person-resolver [{:person/keys [id]}]
+  {::pco/output [:person/name]}
+  (try
+    (or (fetch-person id) {})
+    (catch Exception e
+      (log/error e "Failed" {:id id})
+      {})))
+```
+
+**Why**: Pathom expects maps. Returning nil breaks the query. See PATHOM.md for details.
+
 ## Common Tasks
 
 ### Explore an API with Martian
@@ -262,13 +327,25 @@ Access in code:
 
 ## Documentation Index
 
+### Framework Guides (Learn Concepts)
+
 | Document | Purpose |
 |----------|---------|
+| `FULCRO-RAD.md` | ⭐ RAD framework (forms, reports, attributes) |
+| `PATHOM.md` | ⭐ Pathom3 resolvers (input/output, query planning) |
+| `FULCRO.md` | ⭐ Fulcro core (normalization, queries, idents) |
+
+### Project Guides (Get Things Done)
+
+| Document | Purpose |
+|----------|---------|
+| `QUICK_REFERENCE.md` | This file - Common tasks and patterns |
 | `INTEGRATION_GUIDE.md` | Add new API (step-by-step) |
-| `AGENTS.md` | Development workflow, REPL commands |
+| `AGENTS.md` | AI agent instructions, REPL commands |
 | `ARCHITECTURE.md` | System overview, component tables |
 | `RADAR.md` | Runtime introspection patterns |
 | `MARTIAN.md` | HTTP client exploration |
+| `TROUBLESHOOTING.md` | Common issues and solutions |
 | `PLAN.md` | Feature documentation |
 | `CHANGELOG.md` | Version history |
 
