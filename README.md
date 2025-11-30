@@ -31,6 +31,9 @@ Either tool provides the essential capability: **live REPL evaluation**. This le
 │                      UI Layer                           │
 │              (Fulcro RAD Forms & Reports)               │
 ├─────────────────────────────────────────────────────────┤
+│                 Statechart Routing                      │
+│              (Route registration in client.cljs)        │
+├─────────────────────────────────────────────────────────┤
 │                    RAD Attributes                       │
 │              (Schema + UI hints in one place)           │
 ├─────────────────────────────────────────────────────────┤
@@ -45,7 +48,22 @@ Either tool provides the essential capability: **live REPL evaluation**. This le
 └─────────────────────────────────────────────────────────┘
 ```
 
-Each layer has a clear responsibility. AI agents can add a new integration by creating 5 files — one per layer.
+Adding a new API integration requires touching these files:
+
+| Step | File | Purpose |
+|------|------|---------|
+| 1 | `src/main/<api>.yml` | OpenAPI spec |
+| 2 | `components/<api>.clj` | Martian HTTP client |
+| 3 | `config/defaults.edn` | API configuration |
+| 4 | `model/<api>.cljc` | Resolvers + business logic |
+| 5 | `model_rad/<api>.cljc` | RAD attribute definitions |
+| 6 | `model_rad/attributes.cljc` | Register attributes |
+| 7 | `components/parser.clj` | Register resolvers |
+| 8 | `ui/<api>_forms.cljc` | Forms and reports |
+| 9 | `ui/root.cljc` | Menu items |
+| 10 | `client.cljs` | **Statechart route registration** ⚠️ |
+
+Step 10 is critical — without registering routes in the statechart, menu clicks won't load components.
 
 ## Example Integrations
 
