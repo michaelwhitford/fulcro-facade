@@ -8,22 +8,7 @@
     [com.fulcrologic.rad.attributes-options :as ao]
     [com.fulcrologic.rad.form-options :as fo]))
 
-;; entity :swapi/all-entities
-(defattr entity_id :entity/id :string
-  {ao/identity? true
-   ao/required? true})
-
-(defattr entity_name :entity/name :string
-  {ao/identities #{:entity/id}})
-
-(defattr entity_type :entity/type :keyword
-  {ao/identities #{:entity/id}})
-
-#_(defattr entity_entity :entity/entity :map
-    {ao/identities #{:entity/id}})
-
-(def entity-attributes
-  [entity_id entity_name entity_type #_entity_entity])
+;; NOTE: Entity attributes moved to model_rad/entity.cljc
 
 ;; person :swapi/all-people
 
@@ -311,8 +296,7 @@
    starship_length starship_manufacturer starship_max_atmosphering_speed starship_model
    starship_passengers starship_pilots starship_class])
 
-(def attributes (vec (concat entity-attributes
-                             person-attributes
+(def attributes (vec (concat person-attributes
                              planet-attributes
                              species-attributes
                              film-attributes

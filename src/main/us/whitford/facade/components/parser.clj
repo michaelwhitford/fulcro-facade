@@ -18,6 +18,7 @@
    [us.whitford.facade.model-rad.attributes :refer [all-attributes]]
    ;; Require namespaces that define resolvers
    [us.whitford.facade.model.account :as m.account]
+   [us.whitford.facade.model.entity :as m.entity]
    [us.whitford.facade.model.hpapi :as m.hpapi]
    [us.whitford.facade.model.swapi :as m.swapi]
    [us.whitford.fulcro-radar.api :as radar]))
@@ -52,6 +53,7 @@
 (def all-resolvers
   "The list of all hand-written resolvers/mutations."
   [m.account/resolvers
+   m.entity/resolvers
    m.hpapi/resolvers
    m.swapi/resolvers])
 

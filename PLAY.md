@@ -1,295 +1,222 @@
-# PLAY.md - Facade Application Evaluation Report
+# PLAY.md - Exploration Findings
 
-**Date:** November 29, 2024  
-**Evaluator:** ECA (AI Assistant)
+## Summary
 
----
+Facade is a well-structured Fulcro RAD application that provides a unified client for SWAPI (Star Wars API) and HPAPI (Harry Potter API). The app demonstrates good use of Fulcro's architecture including statecharts for routing, Pathom3 for resolvers, and RAD for forms/reports.
 
-## Executive Summary
+## Project Statistics
 
-Facade is a **well-architected Fulcro RAD application** that successfully integrates multiple external APIs (SWAPI and Harry Potter API) into a unified client interface. The application demonstrates sophisticated use of:
-
-- **Fulcro RAD patterns** (forms, reports, attributes)
-- **Pathom3 resolvers** for graph-based data fetching
-- **Statechart-based routing** with 20 configured routes
-- **Server-side pagination** for all SWAPI entities
-- **Cross-entity search** with parallel API fetching
-
-**Overall Assessment: ✅ MVP Complete (~90%)**
-
----
-
-## REPL Evaluation Results
-
-### 1. RADAR Diagnostic Overview
-
-The RADAR diagnostic tool confirmed:
-
-| Metric | Value |
-|--------|-------|
-| Mount States Running | 11 |
+| Component | Count |
+|-----------|-------|
+| Mount States | 11 |
 | RAD Attributes | 94 |
-| Entities | 12 |
+| SWAPI Resolvers | 13 |
+| HPAPI Resolvers | 4 |
 | Forms | 10 |
 | Reports | 10 |
-| References | 13 |
-| HTTP Port | 3010 |
-| CSRF | Disabled (dev mode) |
+| Entity Types | 12 |
 
-**Summary:** `"Mount: 11 states, 94 attrs, 12 entities, 10 forms, 10 reports, 13 refs"`
+## What's Working Well
 
-### 2. SWAPI Integration Tests
+### 1. Clean Architecture
+- Clear separation between model (`model/`), RAD definitions (`model_rad/`), and UI (`ui/`)
+- Mount states properly manage component lifecycle
+- Configuration is centralized and hierarchical (`config/defaults.edn`, `config/dev.edn`)
 
-✅ **People Query** - Successfully returned 10 people (first page)
+### 2. Pathom3 Integration
+- Parser is well-configured with proper middleware stacking
+- RADAR diagnostic tool provides excellent visibility into the system
+- Query params are normalized for easier resolver access
+
+### 3. Martian HTTP Client
+- Swagger/OpenAPI specs drive API client generation (`swapi.yml`, `hpapi.yml`)
+- Interceptors allow tap> debugging of requests/responses
+
+### 4. Statecharts Routing
+- Modern statechart-based routing with `ui-routes`
+- Route change protection for unsaved forms
+- Good integration with RAD forms/reports
+
+### 5. Testing Approach
+- Configuration tests validate structure without starting full system
+- fulcro-spec style assertions are clean
+
+## Recommendations for Improvement
+
+### 1. **Reduce Resolver Duplication (High Impact)**
+
+The SWAPI resolvers (`model/swapi.cljc`) contain significant duplication. All 6 list resolvers follow the same pattern:
+
 ```clojure
-;; Sample result:
-[{:person/id "1", :person/name "Luke Skywalker", :person/birth_year "19BBY"}
- {:person/id "2", :person/name "C-3PO", :person/birth_year "112BBY"}
- ...]
+;; Current: Each resolver is ~20 lines with identical structure
+(pco/defresolver all-people-resolver ...)
+(pco/defresolver all-vehicles-resolver ...)
+(pco/defresolver all-starships-resolver ...)
+;; etc.
 ```
 
-✅ **Single Person Resolver** - Ident-based lookups work
+**Suggestion**: Create a resolver factory:
+
 ```clojure
-;; Query: [{[:person/id "1"] [:person/name :person/height :person/mass]}]
-;; Result: {:person/name "Luke Skywalker", :person/height "172", :person/mass "77"}
+(defn make-list-resolver [entity-key output-key output-spec]
+  (pco/resolver
+    {::pco/output [{output-key [:total {:results output-spec}]}]}
+    (fn [{:keys [query-params]} _]
+      (let [{:keys [search]} query-params
+            opts (build-opts search query-params)
+            {:keys [results total-count]} (swapi-data-paginated entity-key opts)]
+        {output-key {:results (or results []) :total (or total-count 0)}}))))
+
+(def all-people-resolver (make-list-resolver :people :swapi/all-people person-output-spec))
+(def all-vehicles-resolver (make-list-resolver :vehicles :swapi/all-vehicles vehicle-output-spec))
 ```
 
-✅ **Films Query** - All 6 Star Wars films returned
+This could reduce ~150 lines to ~50 lines while making the pattern explicit.
+
+### 2. **Extract Report Control Boilerplate (Medium Impact)**
+
+Every report in `swapi_forms.cljc` repeats identical pagination controls:
+
 ```clojure
-[{:film/id "1", :film/title "A New Hope", :film/director "George Lucas"}
- {:film/id "2", :film/title "The Empire Strikes Back", :film/director "Irvin Kershner"}
- ...]
+ro/controls {::refresh ...
+             ::prior-page ...
+             ::next-page ...
+             ::page-info ...}
+ro/control-layout {:action-buttons [::refresh ::prior-page ::page-info ::next-page]}
 ```
 
-✅ **Starships Pagination** - Pagination metadata returned correctly
+**Suggestion**: Create shared control definitions:
+
 ```clojure
-{:swapi.starships/total-count 36
- :swapi.starships/current-page 1
- :swapi.starships/page-size 10}
+(def pagination-controls {...})
+(def pagination-layout {...})
+
+;; Then in each report:
+ro/controls (merge pagination-controls {...specific...})
+ro/control-layout pagination-layout
 ```
 
-### 3. Harry Potter API Integration Tests
+### 3. **Simplify URL->ID Transformation (Low Impact)**
 
-✅ **Characters Query** - Returned 407 characters
+The `transform-swapi` function chains 9 nearly identical `mapv` calls:
+
 ```clojure
-[{:character/id "9e3f7ce4-...", :character/name "Harry Potter", 
-  :character/house "Gryffindor", :character/species "human"}
- {:character/id "4c7e6819-...", :character/name "Hermione Granger", 
-  :character/house "Gryffindor", :character/species "human"}
- ...]
+(defn transform-swapi [input]
+  (->> (mapv swapi-id input)
+       (mapv (fn [m] (update-in-contains m [:films] ...)))
+       (mapv (fn [m] (update-in-contains m [:starships] ...)))
+       ;; ... 7 more
 ```
 
-✅ **Spells Query** - Returned 77 spells
+**Suggestion**: Use a single reduce with a list of keys to transform:
+
 ```clojure
-[{:spell/id "c76a2922-...", :spell/name "Aberto", :spell/description "Opens locked doors"}
- {:spell/id "06485500-...", :spell/name "Accio", :spell/description "Summons objects"}
- {:spell/id "9a6b6854-...", :spell/name "Avada Kedavra", 
-  :spell/description "Also known as The Killing Curse..."}
- ...]
+(def url-fields #{:films :starships :species :vehicles :residents 
+                  :people :characters :pilots :planets :homeworld})
+
+(defn transform-swapi [input]
+  (->> input
+       (mapv swapi-id)
+       (mapv (fn [m]
+               (reduce (fn [acc k]
+                         (if-let [v (get acc k)]
+                           (update acc k #(if (coll? %) 
+                                            (mapv swapiurl->id %) 
+                                            (swapiurl->id %)))
+                           acc))
+                       m url-fields)))))
 ```
 
-### 4. Cross-Entity Search
+### 4. **Add More Test Coverage (Medium Impact)**
 
-✅ **Unified Search** - Returns entities from all SWAPI types
+Current tests only cover configuration. Consider adding:
+- Resolver unit tests (mock API responses)
+- URL transformation tests
+- Form state machine tests
+
+### 5. **Consider Caching for Read-Only APIs**
+
+Since SWAPI and HPAPI data rarely changes, consider:
+- Adding `atom`-based caching for API responses
+- TTL-based cache invalidation
+- This would reduce API calls and improve UX
+
+### 6. **Remove Commented/Dead Code**
+
+Several files have commented-out code blocks that could be cleaned up:
+- `swapi.clj`: Commented `image-encoder` setup
+- `hpapi.clj`: Same pattern
+- `swapi_forms.cljc`: Multiple commented-out mutations
+
+### 7. **Standardize Naming Conventions**
+
+Entity naming is inconsistent:
+- SWAPI uses `:specie/id` (singular) for species entities
+- Some attributes use underscores (`:person/birth_year`) from API response
+- Consider using kebab-case consistently or documenting the convention
+
+### 8. **Extract Martian Setup Pattern**
+
+Both `swapi.clj` and `hpapi.clj` have nearly identical structure. Could be:
+
 ```clojure
-;; Search result: 56 entities total
-[{:entity/id "person-1", :entity/name "Luke Skywalker", :entity/type :person}
- {:entity/id "vehicle-4", :entity/name "Sand Crawler", :entity/type :vehicle}
- {:entity/id "planet-1", :entity/name "Tatooine", :entity/type :planet}
- {:entity/id "specie-1", :entity/name "Human", :entity/type :specie}
- {:entity/id "starship-10", :entity/name "Millennium Falcon", :entity/type :starship}
- {:entity/id "film-1", :entity/name "A New Hope", :entity/type :film}]
+(defn make-martian-state [config-key]
+  (defstate name
+    :start
+    (let [{:keys [swagger-file server-url]} (get config config-key)]
+      (martian-http/bootstrap-openapi swagger-file {...}))))
 ```
 
-### 5. Pathom Environment
+## Interesting Patterns Observed
 
-✅ **29 Resolvers Registered** including:
-- `all-people-resolver`, `all-films-resolver`, `all-planets-resolver`
-- `all-species-resolver`, `all-vehicles-resolver`, `all-starships-resolver`
-- `all-characters-resolver`, `all-spells-resolver`
-- `all-entities-resolver` (cross-entity search)
-- Individual entity resolvers for each type
+### RADAR Diagnostic System
+The fulcro-radar integration provides excellent introspection:
 
----
-
-## Test Suite Results
-
-```
-53 tests, 590 assertions, 0 failures ✅
+```clojure
+(parser {} [:radar/overview])
+;; Returns mount states, forms, reports, entities, attributes, references
 ```
 
-### Test Coverage by File
+This is a great debugging aid during development.
 
-| File | Lines | Description |
-|------|-------|-------------|
-| `model/swapi_test.cljc` | 295 | SWAPI data transformation tests |
-| `model_rad/swapi_test.cljc` | 196 | RAD attribute definition tests |
-| `components/utils_test.cljc` | 138 | Utility function tests |
-| `model/hpapi_test.cljc` | 130 | Harry Potter transformation tests |
-| `config_test.cljc` | 118 | Configuration validation tests |
-| `model/search_test.cljc` | 105 | Search functionality tests |
-| `model/account_test.cljc` | 87 | Account management tests |
-| `ui/swapi_forms_test.cljc` | 31 | Pagination helper tests |
-| `ui/search_forms_test.cljc` | 19 | Entity icon mapping tests |
+### Query Param Normalization
+Smart middleware that allows resolvers to use simple keywords even when RAD sends namespaced params:
 
-**Total Test LOC:** ~1,127 lines  
-**Test-to-Source Ratio:** ~42% (1,127 / 2,661)
+```clojure
+(defn normalize-query-params [query-params]
+  (reduce-kv (fn [m k v]
+               (let [simple-key (keyword (name k))]
+                 (cond-> m
+                   (not (contains? m simple-key)) (assoc simple-key v))))
+    query-params query-params))
+```
 
----
+## Files Explored
 
-## Code Metrics
+- `deps.edn` - Dependencies and aliases
+- `shadow-cljs.edn` - ClojureScript build config  
+- `src/dev/development.clj` - Development utilities
+- `src/main/us/whitford/facade/components/*.clj` - Server components
+- `src/main/us/whitford/facade/model/*.cljc` - Resolvers and business logic
+- `src/main/us/whitford/facade/model_rad/*.cljc` - RAD attribute definitions
+- `src/main/us/whitford/facade/ui/*.cljc` - UI components
+- `src/main/config/*.edn` - Configuration files
+- `src/test/**` - Test files
 
-### Source Code
+## REPL Experiments
 
-| Category | Lines |
-|----------|-------|
-| UI Components | ~928 |
-| Model/Resolvers | ~720 |
-| Components | ~650 |
-| RAD Attributes | ~300 |
-| Other | ~63 |
-| **Total** | **~2,661** |
-
-### Routes Configured (20 total)
-
-- **SWAPI:** People, Films, Planets, Species, Vehicles, Starships (list + form each)
-- **Harry Potter:** Characters, Spells (list + form each)
-- **Other:** Landing Page, Accounts, Search Report
-
----
-
-## Architecture Observations
-
-### Strengths ✅
-
-1. **Clean Separation of Concerns**
-   - Model files contain only resolvers and transformations
-   - UI files are separate from business logic
-   - RAD attributes define schema separately
-
-2. **Effective Use of RAD Patterns**
-   - `defattr` for centralized attribute definitions
-   - `defsc-form` and `defsc-report` for UI generation
-   - Picker options for relationships
-
-3. **Robust Data Transformation**
-   - `swapiurl->id` extracts IDs from SWAPI URLs
-   - `map->nsmap` / `map->deepnsmap` for namespacing
-   - Proper handling of nested references
-
-4. **Server-Side Pagination**
-   - All SWAPI reports support pagination
-   - Pagination metadata (total-count, page-size, current-page) exposed
-   - UI controls for navigation
-
-5. **Parallel API Fetching**
-   - Cross-entity search uses `future` for concurrent requests
-   - Reduces latency for search operations
-
-### Areas for Improvement 🔧
-
-1. **No Error Handling**
-   - API calls lack try/catch wrappers
-   - No retry logic for transient failures
-   - No circuit breaker pattern
-
-2. **Minor Inconsistency**
-   - `:specie` vs `:species` namespace (route is `/specie/:id`)
-
-3. **No Caching**
-   - API responses not cached server-side
-   - Repeated queries hit external APIs
-
----
-
-## Feature Completeness
-
-### SWAPI Integration ✅ Complete
-
-| Entity | List | Detail | Pagination | Search |
-|--------|------|--------|------------|--------|
-| People | ✅ | ✅ | ✅ | ✅ |
-| Films | ✅ | ✅ | ✅ | ✅* |
-| Planets | ✅ | ✅ | ✅ | ✅ |
-| Species | ✅ | ✅ | ✅ | ✅ |
-| Vehicles | ✅ | ✅ | ✅ | ✅ |
-| Starships | ✅ | ✅ | ✅ | ✅ |
-
-*Films filtered client-side (SWAPI doesn't support film search parameter)
-
-### Harry Potter Integration ✅ Complete
-
-| Entity | List | Detail | Search |
-|--------|------|--------|--------|
-| Characters | ✅ | ✅ | ✅ |
-| Spells | ✅ | ✅ | ✅ |
-
-### Additional Features ✅
-
-- [x] Cross-entity search with icons
-- [x] Statechart-based routing
-- [x] Route blocking modal for unsaved changes
-- [x] Toast notifications for errors
-- [x] Account management (Datomic-backed)
-- [x] File upload support
-
----
-
-## Dependencies & Infrastructure
-
-### Backend Stack
-- **Clojure** with Pathom3
-- **Datomic dev-local** (in-memory)
-- **HTTP-Kit** server on port 3010
-- **Martian** for OpenAPI client generation
-
-### Frontend Stack
-- **ClojureScript** with Fulcro 3.9
-- **Shadow-CLJS** for build
-- **Semantic UI React** for components
-- **Statecharts** for routing
-
-### External APIs
-- **SWAPI:** https://swapi.dev/api
-- **HP API:** https://hp-api.onrender.com/api
-
----
-
-## Recommendations
-
-### Immediate (Before Production)
-
-1. **Add Error Handling**
-   - Wrap API calls in try/catch
-   - Add user-friendly error messages
-   - Log failures with context
-
-### Short Term
-
-2. **Add API Response Caching**
-   - TTL-based cache for SWAPI responses
-   - Consider client-side caching
-
-3. **Improve Test Coverage**
-   - Add integration tests with mocked APIs
-   - Test error scenarios
-
-### Long Term
-
-4. **Production Readiness**
-   - Health check endpoint
-   - Structured logging
-   - Monitoring/alerting
-
----
+Tested successfully:
+- `(parser {} [:radar/overview])` - Full diagnostic output
+- `(parser {} [{:swapi/all-people [:total {:results [:person/id :person/name]}]}])` - 82 people, 10 per page
+- `(parser {} [{:hpapi/all-characters [:character/id :character/name :character/house]}])` - 400+ HP characters
+- `(martian/explore swapi-martian)` - 12 SWAPI endpoints
+- `(martian/explore hpapi-martian)` - 2 HPAPI endpoints
 
 ## Conclusion
 
-Facade is a **solid demonstration** of Fulcro RAD capabilities with external API integration. The core functionality is complete and working well. The codebase is well-organized, follows good patterns, and has reasonable test coverage.
+Facade is a solid demonstration of Fulcro RAD capabilities. The main opportunities for simplification lie in:
+1. Reducing boilerplate through factory functions and shared definitions
+2. Adding test coverage for core business logic
+3. Cleaning up dead code
 
-**Ready for:** Development/demo use  
-**Needs before production:** Error handling, caching
-
----
-
-*Report generated by ECA (Editor Code Assistant)*
+The architecture is sound and the code is readable - improvements would primarily be about DRY principles and maintainability.

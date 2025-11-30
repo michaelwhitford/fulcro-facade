@@ -18,20 +18,29 @@
     [com.fulcrologic.statecharts.integration.fulcro.rad-integration :as ri]
     [com.fulcrologic.statecharts.integration.fulcro.ui-routes :as uir]
     [taoensso.timbre :as log]
-    [us.whitford.facade.model-rad.swapi :as rs]
-    [us.whitford.facade.model.swapi :as swapi]
+    [us.whitford.facade.model-rad.entity :as re]
+    [us.whitford.facade.ui.hpapi-forms :refer [CharacterForm SpellForm]]
     [us.whitford.facade.ui.swapi-forms :refer [PersonForm FilmForm SpeciesForm PlanetForm VehicleForm StarshipForm]]
     [us.whitford.facade.ui.toast :refer [toast!]]))
 
 ;; Forward declare SearchReport for use in set-search-term mutation
 (declare SearchReport)
 
-(defmutation set-search-term
-  "Set the search term in the SearchReport control parameters"
+(defmutation set-search-term-and-run
+  "Set the search term and trigger report run in a single transaction.
+   Uses the global control path since ::search-term is not a local control."
   [{:keys [search-term]}]
-  (action [{:keys [state]}]
-    (let [report-ident (comp/get-ident SearchReport {})]
-      (swap! state assoc-in (conj report-ident :ui/parameters ::search-term) search-term))))
+  (action [{:keys [state app] :as env}]
+    ;; Non-local controls are stored at [::control/id <key> ::control/value]
+    (log/info "set-search-term-and-run mutation" {:search-term search-term :app-exists? (boolean app)})
+    (swap! state assoc-in [::control/id ::search-term ::control/value] search-term)
+    ;; Trigger the report to run after state is updated
+    #?(:cljs (when app
+               (js/setTimeout 
+                 (fn []
+                   (log/info "Running report with search term" {:search-term search-term})
+                   (report/run-report! app SearchReport))
+                 100)))))
 
 (defsc Search [this {:ui/keys [search] :as props}]
   {:query [:ui/search]
@@ -41,17 +50,18 @@
                     (when (and search (not (str/blank? search)))
                       (let [app (comp/any->app this)
                             search-term (str/trim search)]
-                        ;; Set the search term in the report's parameters
-                        (comp/transact! app [(set-search-term {:search-term search-term})])
-                        ;; Navigate to SearchReport and trigger reload with search term
-                        (uir/route-to! app `SearchReport {:query-params {:search search-term}})
+                        (log/info "Search submitted" {:search-term search-term})
+                        ;; Navigate to SearchReport first
+                        (uir/route-to! app `SearchReport {})
+                        ;; Then set the search term and run the report in one transaction
+                        (comp/transact! app [(set-search-term-and-run {:search-term search-term})])
                         ;; Clear the search input after navigation
                         (set-string!! this :ui/search :value ""))))]
     (dom/div :.ui.form
       (dom/div :.ui.action.icon.input
         (dom/input {:type "text"
                     :value (or search "")
-                    :placeholder "Search SWAPI..."
+                    :placeholder "Search Star Wars & Harry Potter..."
                     :onChange (fn [evt] #?(:clj evt
                                            :cljs (set-string!! this :ui/search :event evt)))
                     :onKeyDown (fn [evt]
@@ -77,66 +87,79 @@
   "Return the appropriate icon class for an entity type"
   [entity-type]
   (case entity-type
+    ;; SWAPI types
     :person "user"
     :film "film"
     :vehicle "car"
     :starship "space shuttle"
     :specie "hand spock"
     :planet "globe"
+    ;; Harry Potter types
+    :character "magic"
+    :spell "bolt"
     "question"))
+
+(def entity-type->form
+  "Map of entity types to their detail forms"
+  {:person    PersonForm
+   :film      FilmForm
+   :vehicle   VehicleForm
+   :starship  StarshipForm
+   :specie    SpeciesForm
+   :planet    PlanetForm
+   :character CharacterForm
+   :spell     SpellForm})
+
+(defn parse-entity-id
+  "Parse entity ID string to extract the raw ID portion.
+   Handles both numeric IDs (SWAPI: 'person-1') and UUIDs (HP: 'character-abc123-def456')"
+  [entity-id]
+  (when entity-id
+    ;; Match type-id where id can be numeric or UUID
+    (when-let [match (re-matches #"^([^-]+)-(.+)$" entity-id)]
+      (nth match 2))))
 
 (defsc SearchResultRow [this props]
   {:query [:entity/id :entity/name :entity/type]
-   :ident (fn [] [:entity/id (:entity/id props)])}
+   :ident :entity/id}
   (let [{:entity/keys [id name type]} props
-        id-map {:person   PersonForm
-                :film     FilmForm
-                :vehicle  VehicleForm
-                :starship StarshipForm
-                :specie   SpeciesForm
-                :planet   PlanetForm}
-        matches (re-matches #"^.*-(\d+)$" id)
-        edit-id (last matches)]
+        edit-id (parse-entity-id id)
+        form-class (get entity-type->form type)]
     (dom/div :.ui.segment {:style {:marginBottom "10px"}}
       (dom/div :.ui.header
         (dom/i {:className (str "ui " (entity-type-icon type) " icon")})
         (dom/a {:style {:cursor "pointer"}
-                :onClick (fn [] (when edit-id
-                                  (ri/edit! (comp/any->app this) (id-map type) edit-id)))}
+                :onClick (fn [] (when (and edit-id form-class)
+                                  (ri/edit! (comp/any->app this) form-class edit-id)))}
           name))
-      (dom/div :.ui.label (str/capitalize (name type))))))
+      (dom/div :.ui.label (str/capitalize (clojure.core/name type))))))
 
 (def ui-search-result-row (comp/factory SearchResultRow {:keyfn :entity/id}))
 
 (report/defsc-report SearchReport [this props]
-  {ro/title "SWAPI Cross-Entity Search"
+  {ro/title "Universal Search"
    ro/route "search"
    ro/source-attribute    :swapi/all-entities
-   ro/row-pk              rs/entity_id
-   ro/columns             [rs/entity_type rs/entity_name rs/entity_id]
+   ro/row-pk              re/entity_id
+   ro/columns             [re/entity_type re/entity_name re/entity_id]
    ro/column-headings     {:entity/type "Type"
                            :entity/name "Name"
                            :entity/id "ID"}
    ro/column-formatters   {:entity/type (fn [_this v _row-props _attr]
                                           (dom/span
                                             (dom/i {:className (str "ui " (entity-type-icon v) " icon")})
-                                            (str/capitalize (name v))))
+                                            (str/capitalize (clojure.core/name v))))
                            :entity/name (fn [this v {:entity/keys [id type] :as _row-props} _attr]
-                                          (let [id-map {:person   PersonForm
-                                                        :film     FilmForm
-                                                        :vehicle  VehicleForm
-                                                        :starship StarshipForm
-                                                        :specie   SpeciesForm
-                                                        :planet   PlanetForm}
-                                                matches (re-matches #"^.*-(\d+)$" id)
-                                                edit-id (last matches)]
+                                          (let [edit-id (parse-entity-id id)
+                                                form-class (get entity-type->form type)]
                                             (dom/a {:style {:cursor "pointer" :color "#4183c4"}
-                                                    :onClick (fn [] (when edit-id
-                                                                      (ri/edit! (comp/any->app this) (id-map type) edit-id)))}
+                                                    :onClick (fn [] (when (and edit-id form-class)
+                                                                      (ri/edit! (comp/any->app this) form-class edit-id)))}
                                               (str v))))
                            :entity/id (fn [_this v _row-props _attr]
                                         (dom/span :.ui.small.grey.text (str v)))}
-   ro/row-visible? (fn [{::keys [filter-term]} {:entity/keys [name type]}]
+   ;; Temporarily disabled to debug empty rows issue
+   #_ro/row-visible? #_(fn [{::keys [filter-term]} {:entity/keys [name type]}]
                      (let [nm (some-> name str/lower-case)
                            typ (some-> type name str/lower-case)
                            target (some-> filter-term str/trim str/lower-case)]
@@ -145,16 +168,16 @@
                          (empty? target)
                          (and nm (str/includes? nm target))
                          (and typ (str/includes? typ target)))))
-   ro/run-on-mount?       true
+   ro/run-on-mount?       false
    ro/initial-sort-params {:sort-by :entity/type
                            :ascending? true
                            :sortable-columns #{:entity/name :entity/type}}
    ro/controls            {::search-term {:type :string
                                           :label "Search Term"
-                                          :placeholder "Enter search term (e.g., 'luke', 'tatooine', 'x-wing')..."
+                                          :placeholder "Search Star Wars & Harry Potter (e.g., 'luke', 'harry', 'levios')..."
                                           :style {:minWidth "400px"}}
                            ::search! {:type :button
-                                      :label "Search SWAPI"
+                                      :label "Search"
                                       :class "ui primary button"
                                       :action (fn [this _]
                                                 (control/run! this))}
@@ -178,22 +201,19 @@
    ro/control-layout      {:action-buttons [::search! ::clear! ::result-count]
                            :inputs         [[::search-term]
                                             [::filter-term]]}
-   ro/before-load (fn [env]
-                    (let [search-term (get-in env [:params ::search-term])]
-                      (log/info "SearchReport before-load" {:search-term search-term})
-                      (assoc-in env [:query-params :search] (or search-term ""))))
+   ;; Map the namespaced control key to the resolver's expected :search-term key
+   ;; load-options merges with the default load params, and :params key overrides
+   ro/load-options (fn [env]
+                     (let [params (report/current-control-parameters env)
+                           search-term (::search-term params)]
+                       (log/info "SearchReport load-options" {:search-term search-term :all-params params})
+                       {:params (assoc params :search-term search-term)}))
    ro/row-actions [{:label "View"
                     :action (fn [this {:entity/keys [id type]}]
-                              (let [id-map {:person   PersonForm
-                                            :film     FilmForm
-                                            :vehicle  VehicleForm
-                                            :starship StarshipForm
-                                            :specie   SpeciesForm
-                                            :planet   PlanetForm}
-                                    matches (re-matches #"^.*-(\d+)$" id)
-                                    edit-id (last matches)]
-                                (when edit-id
-                                  (ri/edit! (comp/any->app this) (id-map type) edit-id))))}]
+                              (let [edit-id (parse-entity-id id)
+                                    form-class (get entity-type->form type)]
+                                (when (and edit-id form-class)
+                                  (ri/edit! (comp/any->app this) form-class edit-id))))}]
    ro/BodyItem SearchResultRow
    })
 

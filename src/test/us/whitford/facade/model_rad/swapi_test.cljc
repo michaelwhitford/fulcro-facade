@@ -114,19 +114,7 @@
     (get swapi-rad/starship_class ::attr/qualified-key) => :starship/class
     (get swapi-rad/starship_class ::attr/type) => :string))
 
-(deftest entity-attributes-test
-  (assertions "entity-attributes exist"
-    (vector? swapi-rad/entity-attributes) => true
-    (count swapi-rad/entity-attributes) => 3)
-
-  (assertions "entity_id is identity"
-    (get swapi-rad/entity_id ::attr/qualified-key) => :entity/id
-    (get swapi-rad/entity_id ::attr/identity?) => true
-    (get swapi-rad/entity_id ::attr/required?) => true)
-
-  (assertions "entity_type is a keyword"
-    (get swapi-rad/entity_type ::attr/qualified-key) => :entity/type
-    (get swapi-rad/entity_type ::attr/type) => :keyword))
+;; NOTE: Entity attributes tests moved to entity_test.cljc
 
 (deftest all-attributes-test
   (assertions "attributes vector contains all entity types"
@@ -134,8 +122,7 @@
     (pos? (count swapi-rad/attributes)) => true)
 
   (let [total-count (count swapi-rad/attributes)
-        expected-count (+ (count swapi-rad/entity-attributes)
-                          (count swapi-rad/person-attributes)
+        expected-count (+ (count swapi-rad/person-attributes)
                           (count swapi-rad/planet-attributes)
                           (count swapi-rad/species-attributes)
                           (count swapi-rad/film-attributes)

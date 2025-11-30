@@ -511,30 +511,7 @@
 
        (concat searchable-results filtered-non-searchable))))
 
-#?(:clj
-   (pco/defresolver all-entities-resolver [{:keys [query-params] :as env} params]
-     {::pco/output [{:swapi/all-entities [:entity/id :entity/name :entity/type]}]}
-     (try
-       (let [{:keys [search]} query-params
-             all-entities (fetch-and-transform-entities search)
-             transformed (keep (fn [m]
-                                 (when-let [kw-ns (namespace (first (keys m)))]
-                                   (let [entity-id (m (keyword kw-ns "id"))
-                                         ;; Handle films which use :title instead of :name
-                                         entity-name (or (m (keyword kw-ns "name"))
-                                                         (m (keyword kw-ns "title"))
-                                                         "Unknown")
-                                         entity-type (keyword kw-ns)]
-                                     (when (and entity-id entity-type)
-                                       {:entity/id (format "%s-%s" kw-ns entity-id)
-                                        :entity/name entity-name
-                                        :entity/type entity-type}))))
-                               all-entities)]
-         (log/info "Search completed" {:search-term search :result-count (count transformed)})
-         {:swapi/all-entities (vec transformed)})
-       (catch Exception e
-         (log/error e "Failed to resolve all-entities search")
-         {:swapi/all-entities []}))))
+;; NOTE: all-entities-resolver moved to model/entity.cljc for universal search
 
 #?(:clj (def resolvers [all-people-resolver person-resolver
                         all-vehicles-resolver vehicle-resolver
@@ -542,7 +519,6 @@
                         all-films-resolver film-resolver
                         all-species-resolver species-resolver
                         all-planets-resolver planet-resolver
-                        all-entities-resolver
                         #_load-person
                         #_search]))
 

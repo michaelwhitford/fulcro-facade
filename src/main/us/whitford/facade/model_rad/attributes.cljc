@@ -7,6 +7,7 @@
   (:require
     [com.fulcrologic.rad.attributes :as attr]
     [us.whitford.facade.model-rad.account :as account]
+    [us.whitford.facade.model-rad.entity :as m.entity]
     [us.whitford.facade.model-rad.file :as m.file]
     [us.whitford.facade.model-rad.hpapi :as m.hpapi]
     [us.whitford.facade.model-rad.swapi :as m.swapi]))
@@ -14,6 +15,7 @@
 (def all-attributes (into []
                       (concat
                         account/attributes
+                        m.entity/attributes
                         m.file/attributes
                         m.hpapi/attributes
                         m.swapi/attributes)))
