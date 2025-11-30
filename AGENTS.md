@@ -100,6 +100,40 @@ Read messages in CLJ:
 
 Example: See `ui/game.cljc` (Whack-a-Toast!) for toast callbacks sending game results to server.
 
+## AI Agent Workflow: Asking User Questions
+
+When you need user confirmation or input, follow this pattern:
+
+**Step 1: Clear inbox and note message count (CLJ)**
+```clj
+(require '[us.whitford.facade.model.agent-comms :refer [inbox]])
+(reset! inbox [])
+```
+
+**Step 2: Send question to browser (CLJS)**
+```cljs
+(require '[us.whitford.facade.ui.toast :refer [ask!]])
+(ask! "Should I proceed with this refactoring?")
+```
+
+**Step 3: Poll for answer (CLJ)**
+```clj
+;; Check inbox - user's answer will appear when they click Yes/No
+@inbox
+;; => [{:message "ANSWER", :data {:question "..." :answer true}, :timestamp #inst "..."}]
+```
+
+**Step 4: Act on response (CLJ)**
+```clj
+(if (:answer (:data (last @inbox)))
+  (println "User said YES - proceeding...")
+  (println "User said NO - aborting..."))
+```
+
+**Important:** The user must click Yes or No on the toast in their browser. 
+Poll `@inbox` until the answer arrives. Messages have `:message "ANSWER"` 
+and `:data {:question "..." :answer true/false}`.
+
 ## Documentation
 
 - QUICK_REFERENCE.md - Essential patterns and commands
