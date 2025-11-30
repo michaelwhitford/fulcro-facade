@@ -18,10 +18,10 @@
 
 #?(:clj
    (pco/defmutation send-message [{:keys [message data]}]
-     {::pco/output [:agent/received]}
+     {::pco/output [:agent/received :tempids]}
      (log/info "Agent message received:" message data)
      (swap! inbox conj {:message message :data data :timestamp (java.time.Instant/now)})
-     {:agent/received true})
+     {:agent/received true :tempids {}})
    :cljs
    (m/defmutation send-message [params]
      (remote [env] true)))

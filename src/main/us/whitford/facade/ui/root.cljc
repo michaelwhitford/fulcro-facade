@@ -127,6 +127,8 @@
                    (dom/div :.ui.right.menu
                      (dom/a :.ui.item {:onClick (fn [] (game/start-game!))}
                        (dom/i :.gamepad.icon) "Whack-a-Toast!")
+                     (dom/a :.ui.item {:onClick (fn [] (game/start-ttt!))}
+                       (dom/i :.th.icon) "Tic-Tac-Toast!")
                      (dom/div :.ui.item
                        (ui-search search)))))
                ;; dynamic routing

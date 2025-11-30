@@ -1,10 +1,15 @@
 (ns us.whitford.facade.ui.toast
   #?(:cljs
-     (:require ["react-toastify" :refer [ToastContainer toast]]
+     (:require ["react-toastify" :as toastify :refer [ToastContainer toast]]
                [com.fulcrologic.fulcro.dom :as dom]
                [com.fulcrologic.fulcro.components :as comp]
                [us.whitford.facade.application :refer [SPA]]
                [us.whitford.facade.model.agent-comms :as agent])))
+
+;; Re-export for game.cljc to use in custom toast content
+#?(:cljs (def raw-toast toast))
+#?(:cljs (def dom-div dom/div))
+#?(:cljs (def dom-button dom/button))
 
 (defn ui-toast-container
 
