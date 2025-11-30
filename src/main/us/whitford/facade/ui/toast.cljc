@@ -1,7 +1,10 @@
 (ns us.whitford.facade.ui.toast
   #?(:cljs
      (:require ["react-toastify" :refer [ToastContainer toast]]
-               [com.fulcrologic.fulcro.dom :as dom])))
+               [com.fulcrologic.fulcro.dom :as dom]
+               [com.fulcrologic.fulcro.components :as comp]
+               [us.whitford.facade.application :refer [SPA]]
+               [us.whitford.facade.model.agent-comms :as agent])))
 
 (defn ui-toast-container
 
@@ -42,3 +45,36 @@
    #?(:cljs (toast message (clj->js props))))
   ([message]
    #?(:cljs (toast message))))
+
+#?(:cljs
+   (defn ask!
+     "Ask a yes/no question via toast. Answer sent to agent-comms inbox.
+      
+      Usage from CLJS REPL:
+      (require '[us.whitford.facade.ui.toast :refer [ask!]])
+      (ask! \"Continue with deployment?\")
+      
+      Read answer in CLJ REPL:
+      (last @us.whitford.facade.model.agent-comms/inbox)
+      ;; => {:message \"ANSWER\", :data {:question \"...\" :answer true/false}, ...}"
+     [question]
+     (let [toast-id (atom nil)
+           send-answer! (fn [answer]
+                          (.dismiss toast @toast-id)
+                          (comp/transact! @SPA [(agent/send-message
+                                                  {:message "ANSWER"
+                                                   :data {:question question :answer answer}})]))]
+       (reset! toast-id
+         (toast
+           (fn [_props]
+             (dom/div {}
+               (dom/div {:style {:marginBottom "10px" :fontWeight "bold"}} question)
+               (dom/div {:style {:display "flex" :gap "8px"}}
+                 (dom/button {:className "ui green mini button"
+                              :onClick #(send-answer! true)} "Yes")
+                 (dom/button {:className "ui red mini button"
+                              :onClick #(send-answer! false)} "No"))))
+           #js {:autoClose false
+                :closeOnClick false
+                :draggable false
+                :position "top-center"})))))

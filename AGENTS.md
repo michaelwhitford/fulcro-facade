@@ -60,12 +60,25 @@ Also update: config/defaults.edn, model_rad/attributes.cljc, components/parser.c
 Send notifications to the user's browser:
 
 ```cljs
-(require '[us.whitford.facade.ui.toast :refer [toast!]])
+(require '[us.whitford.facade.ui.toast :refer [toast! ask!]])
 (toast! "Hello from the AI agent! 🤖")
 (toast! {:position "bottom-center" :autoClose 3000} "Task complete!")
 ```
 
 Options: :position (top-right, bottom-center, etc.), :autoClose (ms)
+
+### Ask Yes/No Questions
+
+```cljs
+(ask! "Continue with deployment?")
+```
+
+Then read the answer in CLJ:
+
+```clj
+(last @us.whitford.facade.model.agent-comms/inbox)
+;; => {:message "ANSWER", :data {:question "..." :answer true}, ...}
+```
 
 ## Agent Communication (Browser → CLJ)
 
