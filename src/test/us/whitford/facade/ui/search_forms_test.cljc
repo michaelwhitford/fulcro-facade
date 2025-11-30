@@ -23,7 +23,13 @@
     (sf/parse-entity-id nil) => nil
     (sf/parse-entity-id "") => nil
     (sf/parse-entity-id "invalid") => nil
-    (sf/parse-entity-id "no-dash-here") => "dash-here"))
+    (sf/parse-entity-id "no-dash-here") => "dash-here")
+
+  (assertions "handles malformed IDs"
+    (sf/parse-entity-id "-") => nil
+    (sf/parse-entity-id "person-") => nil
+    (sf/parse-entity-id "-1") => nil
+    (sf/parse-entity-id "a-b-c-d") => "b-c-d"))
 
 (deftest entity-type-icon-test
   (assertions "returns correct icons for SWAPI types"

@@ -21,7 +21,17 @@
   (assertions "handles different entity types"
     (swapi/swapiurl->id "https://swapi.dev/api/starships/1/") => "1"
     (swapi/swapiurl->id "https://swapi.dev/api/species/2/") => "2"
-    (swapi/swapiurl->id "https://swapi.dev/api/vehicles/3/") => "3"))
+    (swapi/swapiurl->id "https://swapi.dev/api/vehicles/3/") => "3")
+
+  (assertions "returns nil for malformed swapi.dev URLs"
+    (swapi/swapiurl->id "https://swapi.dev/") => nil
+    (swapi/swapiurl->id "https://swapi.dev/api/") => nil
+    (swapi/swapiurl->id "https://swapi.dev/api/people/") => nil
+    (swapi/swapiurl->id "https://swapi.dev/api/people/abc/") => nil
+    (swapi/swapiurl->id "http://swapi.dev/api/people/1/") => nil)
+
+  ;; Note: swapiurl->id throws NPE on nil input - callers must ensure non-nil
+  )
 
 (deftest swapi-id-test
   (let [input {:url "https://swapi.dev/api/people/1/" :name "Luke"}]
@@ -49,7 +59,12 @@
   (assertions "returns nil for invalid input"
     (swapi/swapi-page->number "https://swapi.dev/api/people/") => nil
     (swapi/swapi-page->number "no-page-param") => nil
-    (swapi/swapi-page->number "") => nil))
+    (swapi/swapi-page->number "") => nil)
+
+  (assertions "returns nil for non-numeric page values"
+    ;; Note: swapi-page->number throws NPE on nil input - callers must ensure non-nil
+    (swapi/swapi-page->number "https://swapi.dev/api/people/?page=") => nil
+    (swapi/swapi-page->number "https://swapi.dev/api/people/?page=abc") => nil))
 
 (deftest swapi->pathom-test
   (let [input {:films ["https://swapi.dev/api/films/1/" "https://swapi.dev/api/films/2/"]

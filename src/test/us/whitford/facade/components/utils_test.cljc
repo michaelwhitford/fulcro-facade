@@ -57,7 +57,22 @@
   (assertions "parses with different bases"
     (utils/str->int "10" 16) => 16
     (utils/str->int "ff" 16) => 255
-    (utils/str->int "111" 2) => 7))
+    (utils/str->int "111" 2) => 7)
+
+  (assertions "returns nil for float strings (truncates or fails)"
+    (utils/str->int "10.5") => nil
+    (utils/str->int "3.14159") => nil
+    (utils/str->int "-2.5") => nil)
+
+  (assertions "returns nil for whitespace and special formats"
+    (utils/str->int " 10") => nil
+    (utils/str->int "10 ") => nil
+    (utils/str->int " ") => nil
+    (utils/str->int "1,000") => nil
+    (utils/str->int "1_000") => nil)
+
+  (assertions "returns nil for overflow-like strings"
+    (utils/str->int "99999999999999999999") => nil))
 
 (deftest update-in-contains-test
   (let [m {:a {:b 1}}]
@@ -102,7 +117,13 @@
     (utils/ip->hex "10.10.10.1") => "0a0a0a01"
     (utils/ip->hex "192.168.0.1") => "c0a80001"
     (utils/ip->hex "255.255.255.255") => "ffffffff"
-    (utils/ip->hex "0.0.0.0") => "00000000"))
+    (utils/ip->hex "0.0.0.0") => "00000000")
+
+  ;; Note: ip->hex does not validate input - it will produce garbage for invalid IPs
+  ;; These tests document current behavior (no validation)
+  (assertions "produces output for malformed IPs (no validation)"
+    (string? (utils/ip->hex "999.999.999.999")) => true
+    (string? (utils/ip->hex "1.2.3")) => true))
 
 (deftest hex->ip-test
   (assertions "converts hex back to IP"
@@ -130,4 +151,13 @@
   (assertions "returns non-string input unchanged"
     (utils/json->data {:already "data"}) => {:already "data"}
     (utils/json->data nil) => nil
-    (utils/json->data 123) => 123))
+    (utils/json->data 123) => 123)
+
+  (assertions "parses empty JSON structures"
+    (utils/json->data "{}") => {}
+    (utils/json->data "[]") => []
+    (utils/json->data "null") => nil)
+
+  (assertions "parses nested JSON"
+    (utils/json->data "{\"a\":{\"b\":1}}") => {:a {:b 1}}
+    (utils/json->data "[1,2,3]") => [1 2 3]))

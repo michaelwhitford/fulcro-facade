@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Test suite improvements**: Added negative tests and removed placeholder test
+  - Removed trivial `sample_spec.cljc` placeholder test (was just `1+1=2`)
+  - Added negative tests for `str->int` (floats, whitespace, overflow)
+  - Added negative tests for `ip->hex` (documents no input validation)
+  - Added negative tests for `json->data` (empty structures, nested JSON)
+  - Added negative tests for `swapiurl->id` (malformed URLs)
+  - Added negative tests for `swapi-page->number` (non-numeric values)
+  - Added negative tests for entity transformations (empty IDs, unknown namespaces)
+  - Added negative tests for `parse-entity-id` (malformed IDs)
+  - Removed unused require in `search_test.cljc`
+  - Test count: 61 tests, 662 assertions (was 59 tests, 627 assertions)
+
+- **Renamed `model/agent.cljc` to `model/prompt.cljc`** for clarity
+  - `agent/ask!` → `prompt/ask!`
+  - `agent/get-result` → `prompt/get-result`
+  - `agent/pending-questions` → `prompt/pending-questions`
+  - `@agent/agent-env` → `@prompt/prompt-env`
+  - `@agent/pending-asks` → `@prompt/pending-prompts`
+  - Session IDs now use `:prompt/` prefix instead of `:agent-ask/`
+  - Updated all documentation (AGENTS.md, STATECHARTS.md, PLAN.md)
+
 ### Added
 - **Landing page redesign** with hero header and feature cards
   - Hero section with robot icon and welcome message

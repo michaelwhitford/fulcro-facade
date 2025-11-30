@@ -107,3 +107,37 @@
   (assertions "HP types are explicit"
     (:entity/type (entity/hpapi-character->unified {:character/id "1" :character/name "Test"})) => :character
     (:entity/type (entity/hpapi-spell->unified {:spell/id "1" :spell/name "Test"})) => :spell))
+
+(deftest swapi-entity->unified-negative-test
+  ;; Note: These tests document current behavior - the function does not validate
+  ;; entity types or empty IDs. Consider adding validation if this is problematic.
+
+  (assertions "processes mixed namespace keys (uses first found namespace)"
+    ;; Current behavior: picks first namespace it finds, doesn't validate
+    (map? (entity/swapi-entity->unified {:person/id "1" :film/title "Mixed"})) => true)
+
+  (assertions "processes unknown namespaces without validation"
+    ;; Current behavior: accepts any namespace
+    (:entity/type (entity/swapi-entity->unified {:unknown/id "1" :unknown/name "Test"})) => :unknown)
+
+  (assertions "returns nil when id is nil"
+    (entity/swapi-entity->unified {:person/id nil :person/name "Test"}) => nil)
+
+  (assertions "processes empty string id without validation"
+    ;; Current behavior: accepts empty string as ID
+    (:entity/id (entity/swapi-entity->unified {:person/id "" :person/name "Test"})) => "person-"))
+
+(deftest hpapi-negative-test
+  (assertions "character returns nil for empty map"
+    (entity/hpapi-character->unified {}) => nil)
+
+  (assertions "spell returns nil for empty map"
+    (entity/hpapi-spell->unified {}) => nil)
+
+  (assertions "character processes empty string id without validation"
+    ;; Current behavior: accepts empty string as ID
+    (:entity/id (entity/hpapi-character->unified {:character/id "" :character/name "Test"})) => "character-")
+
+  (assertions "spell processes empty string id without validation"
+    ;; Current behavior: accepts empty string as ID
+    (:entity/id (entity/hpapi-spell->unified {:spell/id "" :spell/name "Test"})) => "spell-"))

@@ -2,8 +2,7 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
-   [fulcro-spec.core :refer [assertions =>]]
-   [us.whitford.facade.model.swapi :as swapi]))
+   [fulcro-spec.core :refer [assertions =>]]))
 
 #?(:clj
    (deftest fetch-and-transform-entities-test
