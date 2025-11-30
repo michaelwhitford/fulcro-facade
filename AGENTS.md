@@ -6,6 +6,8 @@ Use PLAN.md for planning, CHANGELOG.md for changes. Update PLAN.md frequently.
 
 App runs in user's browser and editor. Some issues require user intervention.
 
+Use PLAY.md as a scratchpad
+
 ## Commands
 
 Restart server: (require 'development)(development/restart)
@@ -16,6 +18,7 @@ Check deps: clojure -M:outdated
 ## Expected Lint Output
 
 2 errors, 2 warnings are intentional:
+
 - lib/logging.clj:46-47 - Unresolved `_`, `err` - false positive from taoensso.encore/if-let
 - model/hpapi.cljc - Unused UUID import - intentional test
 - model/swapi.cljc - Unused UUID import - intentional test
@@ -37,16 +40,18 @@ Check deps: clojure -M:outdated
 ## Adding APIs
 
 See INTEGRATION_GUIDE.md. Examples by complexity:
-- ipapi.* - Simple: single entity
-- hpapi.* - Medium: multiple entities, filtering
-- swapi.* - Complex: relationships, pagination
+
+- ipapi.\* - Simple: single entity
+- hpapi.\* - Medium: multiple entities, filtering
+- swapi.\* - Complex: relationships, pagination
 
 Files for new API (5 layers):
+
 1. src/main/<api>.yml - OpenAPI spec
 2. components/<api>.clj - Martian client
 3. model/<api>.cljc - Resolvers
 4. model_rad/<api>.cljc - RAD attributes
-5. ui/<api>_forms.cljc - UI
+5. ui/<api>\_forms.cljc - UI
 
 Also update: config/defaults.edn, model_rad/attributes.cljc, components/parser.clj, ui/root.cljc, client.cljs
 
