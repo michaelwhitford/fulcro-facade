@@ -50,18 +50,18 @@ Either tool provides the essential capability: **live REPL evaluation**. This le
 
 Adding a new API integration requires touching these files:
 
-| Step | File | Purpose |
-|------|------|---------|
-| 1 | `src/main/<api>.yml` | OpenAPI spec |
-| 2 | `components/<api>.clj` | Martian HTTP client |
-| 3 | `config/defaults.edn` | API configuration |
-| 4 | `model/<api>.cljc` | Resolvers + business logic |
-| 5 | `model_rad/<api>.cljc` | RAD attribute definitions |
-| 6 | `model_rad/attributes.cljc` | Register attributes |
-| 7 | `components/parser.clj` | Register resolvers |
-| 8 | `ui/<api>_forms.cljc` | Forms and reports |
-| 9 | `ui/root.cljc` | Menu items |
-| 10 | `client.cljs` | **Statechart route registration** ⚠️ |
+| Step | File                        | Purpose                              |
+| ---- | --------------------------- | ------------------------------------ |
+| 1    | `src/main/<api>.yml`        | OpenAPI spec                         |
+| 2    | `components/<api>.clj`      | Martian HTTP client                  |
+| 3    | `config/defaults.edn`       | API configuration                    |
+| 4    | `model/<api>.cljc`          | Resolvers + business logic           |
+| 5    | `model_rad/<api>.cljc`      | RAD attribute definitions            |
+| 6    | `model_rad/attributes.cljc` | Register attributes                  |
+| 7    | `components/parser.clj`     | Register resolvers                   |
+| 8    | `ui/<api>_forms.cljc`       | Forms and reports                    |
+| 9    | `ui/root.cljc`              | Menu items                           |
+| 10   | `client.cljs`               | **Statechart route registration** ⚠️ |
 
 Step 10 is critical — without registering routes in the statechart, menu clicks won't load components.
 
@@ -69,12 +69,12 @@ Step 10 is critical — without registering routes in the statechart, menu click
 
 The repo includes working integrations of varying complexity:
 
-| Integration | Complexity | Demonstrates |
-|-------------|------------|--------------|
-| IP Geolocation (`ipapi`) | Simple | Single entity, no relationships |
-| Weather (`wttr`) | Simple | Dependent resolver (uses IP location) |
-| Harry Potter API (`hpapi`) | Medium | Multiple entities, filtering |
-| SWAPI (`swapi`) | Complex | Relationships, pagination |
+| Integration                | Complexity | Demonstrates                          |
+| -------------------------- | ---------- | ------------------------------------- |
+| IP Geolocation (`ipapi`)   | Simple     | Single entity, no relationships       |
+| Weather (`wttr`)           | Simple     | Dependent resolver (uses IP location) |
+| Harry Potter API (`hpapi`) | Medium     | Multiple entities, filtering          |
+| SWAPI (`swapi`)            | Complex    | Relationships, pagination             |
 
 These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step process.
 
@@ -108,11 +108,11 @@ clj -A:dev
 (development/start)
 ```
 
-Open http://localhost:3000
+Open http://localhost:3010
 
 ### VSCode + Calva
 
-Add to `.vscode/settings.json` or Calva connect sequences:
+Add to `settings.json` under calva.:
 
 ```json
 {
