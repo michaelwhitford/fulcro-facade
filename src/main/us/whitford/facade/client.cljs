@@ -40,6 +40,7 @@
                                                VehicleForm VehicleList
                                                StarshipForm StarshipList]]
     [us.whitford.facade.ui.toast :as toast]
+    [us.whitford.facade.model.agent-comms :as agent-comms]
     [us.whitford.fulcro-radar.api :as radar]))
 
 (defn setup-RAD [app]
