@@ -18,18 +18,40 @@ Martian provides OpenAPI-driven HTTP clients. Use these REPL patterns to discove
 
 ;; List all operations
 (martian/explore swapi-martian)
-;; => [[:people "Get all people"] [:person "Get person by ID"] ...]
+;; => [[:people "Return a list of people"] [:person "Returns a single person"] ...]
 
 ;; Inspect specific operation
-(martian/explore swapi-martian :person)
-;; => {:summary "Get person by ID"
-;;     :parameters [{:name :id :in :path :required true}]
-;;     :returns {...}}
+(martian/explore swapi-martian :people)
+;; => {:summary "Return a list of people"
+;;     :parameters {#schema.core.OptionalKey{:k :search} java.lang.String
+;;                  #schema.core.OptionalKey{:k :page} Any}
+;;     :returns {200 {...} 404 {...}}}
+;; Note: Parameters use Schema types - OptionalKey means the param is optional
 
 ;; Execute request
 @(martian/response-for swapi-martian :person {:id "1"})
 ;; => {:status 200 :body {:name "Luke Skywalker" ...} :opts {...} :headers {...}}
 ```
+
+## Understanding Schema Output
+
+When you inspect operations with `explore`, Martian shows parameter schemas using the `prismatic/schema` library:
+
+**Common patterns:**
+- `{#schema.core.OptionalKey{:k :search} java.lang.String}` - Optional parameter `:search` of type String
+- `{:id java.lang.String}` - Required parameter `:id` of type String  
+- `Any` - Parameter accepts any type
+- `Int` - Integer type
+- `java.lang.Integer` - Java Integer class
+
+**Reading OptionalKey:**
+```clj
+#schema.core.OptionalKey{:k :search}  ; The parameter :search is optional
+```
+
+You can safely ignore the Schema wrapper syntax and focus on:
+1. The key name (`:search`, `:page`, `:id`, etc.)
+2. Whether it's wrapped in `OptionalKey` (optional) or not (required)
 
 ## Available Clients
 
@@ -116,7 +138,11 @@ All martian clients include tap> interceptors for debugging:
 ```clj
 ;; Always explore first to understand available params
 (martian/explore swapi-martian :people)
-;; => Shows :search and :page are optional params
+;; => {:summary "Return a list of people"
+;;     :parameters {#schema.core.OptionalKey{:k :search} java.lang.String
+;;                  #schema.core.OptionalKey{:k :page} Any}
+;;     ...}
+;; The OptionalKey wrapper means these params are optional
 
 ;; Then query with confidence
 @(martian/response-for swapi-martian :people {:search "skywalker" :page 1})
@@ -221,7 +247,9 @@ paths:
 
 ;; Inspect specific operation
 (martian/explore client :post)
-;; => {:summary "Get post by ID", :parameters {:id Int}, :returns {200 nil}}
+;; => {:summary "Get post by ID"
+;;     :parameters {:id java.lang.Integer}
+;;     :returns {200 nil}}
 
 ;; Execute request
 @(martian/response-for client :post {:id 1})
