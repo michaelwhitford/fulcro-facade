@@ -89,6 +89,13 @@
         (dom/em {} "\"add support for X API\"")
         " — and it works.")
       (dom/p {}
+        (dom/strong {} "Requirements: ")
+        "An AI agent with REPL access via "
+        (dom/a {:href "https://github.com/bhauman/clojure-mcp" :target "_blank"} "clojure-mcp")
+        " or "
+        (dom/a {:href "https://github.com/bhauman/clojure-mcp-light" :target "_blank"} "clojure-mcp-light")
+        ".")
+      (dom/p {}
         "See "
         (dom/code {} "AGENTS.md")
         " for the integration guide."))))
