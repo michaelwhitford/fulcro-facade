@@ -59,11 +59,13 @@
       ;; => {:message \"ANSWER\", :data {:question \"...\" :answer true/false}, ...}"
      [question]
      (let [toast-id (atom nil)
+           answered? (atom false)
            send-answer! (fn [answer]
-                          (.dismiss toast @toast-id)
-                          (comp/transact! @SPA [(agent/send-message
-                                                  {:message "ANSWER"
-                                                   :data {:question question :answer answer}})]))]
+                          (when (compare-and-set! answered? false true)
+                            (.dismiss toast @toast-id)
+                            (comp/transact! @SPA [(agent/send-message
+                                                    {:message "ANSWER"
+                                                     :data {:question question :answer answer}})])))]
        (reset! toast-id
          (toast
            (fn [_props]
