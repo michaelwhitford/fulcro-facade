@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Whack-a-Toast! game** - Click toasts before they disappear
+  - Menu button in top-right to start the game
+  - 2 rounds: Round 1 (1.8s toasts), Round 2 (faster, 1s toasts)
+  - Tracks score, misses, and reaction times
+  - Results sent to server via agent-comms channel
+
+- **Agent communication channel** (`model/agent_comms.cljc`)
+  - Enables browser-to-REPL communication via Fulcro mutations
+  - CLJS sends: `(comp/transact! @SPA [(agent/send-message {:message "hi" :data {}})])`
+  - CLJ reads: `@us.whitford.facade.model.agent-comms/inbox`
+  - Works with toast callbacks for async notification patterns
+  - Useful for AI agents to receive feedback from the browser
+
 - **Weather API integration** (wttr.in) with current conditions and 3-day forecast
   - OpenAPI spec (`wttr.yml`) defining weather forecast endpoint
   - Martian HTTP client component (`components/wttr.clj`)

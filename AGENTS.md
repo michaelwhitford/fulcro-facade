@@ -67,6 +67,26 @@ Send notifications to the user's browser:
 
 Options: :position (top-right, bottom-center, etc.), :autoClose (ms)
 
+## Agent Communication (Browser → CLJ)
+
+Send messages from browser back to CLJ REPL:
+
+```cljs
+(require '[us.whitford.facade.model.agent-comms :as agent])
+(require '[us.whitford.facade.application :refer [SPA]])
+(comp/transact! @SPA [(agent/send-message {:message "Hello" :data {:foo 1}})])
+```
+
+Read messages in CLJ:
+
+```clj
+(require '[us.whitford.facade.model.agent-comms :refer [inbox]])
+@inbox  ;; vector of {:message ... :data ... :timestamp ...}
+(reset! inbox [])  ;; clear
+```
+
+Example: See `ui/game.cljc` (Whack-a-Toast!) for toast callbacks sending game results to server.
+
 ## Documentation
 
 - QUICK_REFERENCE.md - Essential patterns and commands

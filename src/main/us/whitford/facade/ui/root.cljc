@@ -33,7 +33,8 @@
                                                VehicleList VehicleForm
                                                StarshipList StarshipForm]]
 
-    [us.whitford.facade.ui.toast :as toast]))
+    [us.whitford.facade.ui.toast :as toast]
+    [us.whitford.facade.ui.game :as game]))
 
 (defsc LandingPage [this props]
   {:query         ['*]
@@ -124,7 +125,8 @@
                        (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `WeatherLookupWidget {}))}
                          (dom/i :.compact.ui.left.floated.cloud.icon " Get Forecast"))))
                    (dom/div :.ui.right.menu
-                     #_(dom/div :.ui.small.loader {:classes [(when busy? "active")]})
+                     (dom/a :.ui.item {:onClick (fn [] (game/start-game!))}
+                       (dom/i :.gamepad.icon) "Whack-a-Toast!")
                      (dom/div :.ui.item
                        (ui-search search)))))
                ;; dynamic routing
