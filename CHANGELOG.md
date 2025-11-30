@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Landing page redesign** with hero header and feature cards
+  - Hero section with robot icon and welcome message
+  - Three feature cards highlighting APIs, Tech Stack, and Games
+  - Info message showcasing AI-assisted development approach
+  - MCP tooling requirements section with links to clojure-mcp and clojure-mcp-light repos
+
+- **Tic-Tac-Toast game** - Play tic-tac-toe against an AI opponent
+  - Grid-based toast UI for displaying the game board
+  - Simple AI that prioritizes center and corner moves
+  - Results sent to server via agent-comms channel
+  - Menu button in top-right to start the game
+
+- **AI agent interaction capabilities** for asking yes/no questions
+  - `ask!` function in CLJS sends yes/no questions to user via toast notifications
+  - User clicks Yes/No buttons, answer appears in CLJ inbox
+  - Documented workflow in AGENTS.md for AI agents to poll for responses
+  - Enables AI agents to get user confirmation before proceeding with tasks
+
+- **Toast notification system** for AI agents
+  - `toast!` function for sending notifications from CLJS REPL to browser
+  - Customizable position and auto-close timing
+  - Documented in AGENTS.md with examples
+
 - **Whack-a-Toast! game** - Click toasts before they disappear
   - Menu button in top-right to start the game
   - 2 rounds: Round 1 (1.8s toasts), Round 2 (faster, 1s toasts)
@@ -43,11 +66,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Common issue: plain key vs join in component queries
 
 ### Fixed
+- **Duplicate answer bug in ask!** - Using compare-and-set! prevents multiple answers from appearing in inbox
+- **Tempids error in send-message mutation** - Fixed issue where mutation wasn't properly handling tempids
 - IP Geolocation menu items now load components correctly
   - Added missing route registrations in `client.cljs` statechart configuration
   - Registered `IpLookupWidget`, `IpLookupList`, and `IpInfoForm` in `application-chart`
 
 ### Changed
+- **AGENTS.md**: Enhanced with AI agent workflow documentation
+  - Added step-by-step guide for AI agents to ask user questions
+  - Documents toast notification system (`toast!` and `ask!`)
+  - Clear examples for browser-to-REPL communication patterns
+  
 - Removed unused `MainRouter` from `root.cljc` (migrated to statechart routing)
 - **INTEGRATION_GUIDE.md**: Added critical Step 10 for statechart route registration
   - Documents how to register routes in `client.cljs` `application-chart`
