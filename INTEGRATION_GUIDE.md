@@ -426,9 +426,10 @@ Find the `application-chart` definition and add your components inside the `(sta
 
 ### 3. Test Resolvers
 ```clojure
-(require '[us.whitford.facade.components.parser :refer [parser]])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
 
-(parser {} [{[:thing/id "1"] [:thing/name]}])
+(p {} [{[:thing/id "1"] [:thing/name]}])
 ```
 
 ### 4. Test in Browser

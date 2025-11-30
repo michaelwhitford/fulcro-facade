@@ -649,6 +649,7 @@ Unmount
 
 - See **FULCRO-RAD.md** for RAD-specific features (forms, reports)
 - See **PATHOM.md** for understanding resolvers and data fetching
+- See **EQL.md** for copy-paste ready query examples
 - See **QUICK_REFERENCE.md** for project-specific patterns
 - See **ARCHITECTURE.md** for how components fit together in this app
 

@@ -178,8 +178,8 @@ User's IP → ipify.org (client) → ip-info-resolver → :ip-info/city
 
 Query weather via IP - Pathom connects automatically:
 ```clojure
-(parser {} [{[:ip-info/id "68.2.71.58"] 
-             [:ip-info/city :weather/temp-c :weather/description]}])
+(p {} [{[:ip-info/id "68.2.71.58"] 
+        [:ip-info/city :weather/temp-c :weather/description]}])
 ;; => {[:ip-info/id "68.2.71.58"] 
 ;;     {:ip-info/city "Phoenix", :weather/temp-c "17", :weather/description "Clear"}}
 ```
@@ -198,12 +198,13 @@ Query weather via IP - Pathom connects automatically:
 @(martian/response-for wttr-martian :forecast {:location "London" :format "j1"})
 
 ;; Test via parser
-(require '[us.whitford.facade.components.parser :refer [parser]])
-(parser {} [{[:weather/id "Tokyo"] [:weather/temp-c :weather/description]}])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
+(p {} [{[:weather/id "Tokyo"] [:weather/temp-c :weather/description]}])
 
 ;; Test IP -> Weather graph connection
-(parser {} [{[:ip-info/id "8.8.8.8"] 
-             [:ip-info/city :weather/temp-c :weather/description]}])
+(p {} [{[:ip-info/id "8.8.8.8"] 
+        [:ip-info/city :weather/temp-c :weather/description]}])
 ```
 
 ---
@@ -292,9 +293,10 @@ Universal search across SWAPI (Star Wars) and Harry Potter APIs from a single Se
 
 ```clojure
 ;; Test resolver directly
-(require '[us.whitford.facade.components.parser :as parser])
-(parser/parser {} ['({:swapi/all-entities [:entity/id :entity/name :entity/type]} 
-                     {:search-term "harry"})])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
+(p {} ['({:swapi/all-entities [:entity/id :entity/name :entity/type]} 
+         {:search-term "harry"})])
 ;; => {:swapi/all-entities [{:entity/id "character-..." :entity/name "Harry Potter" :entity/type :character}]}
 ```
 

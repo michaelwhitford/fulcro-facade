@@ -1,4 +1,4 @@
-# Fulcro RAD Framework Guide (EXAMPLE DRAFT)
+# Fulcro RAD Framework Guide
 
 > **Purpose**: This document explains Fulcro RAD concepts and patterns used in this project.  
 > **Audience**: AI agents and developers new to Fulcro RAD.  
@@ -74,13 +74,15 @@ Attributes are the **foundation of RAD**. They define your data schema, validati
 (defattr person_id :person/id :string
   {ao/identity? true     ; ⭐ This makes it an identity
    ao/required? true
-   ao/schema :production})
+   ao/schema :production})  ; ⭐ Required for Datomic persistence
 ```
 
 **Rules**:
 - Must be unique per entity
 - Used for normalization (Fulcro's idents)
 - Can be `:string`, `:int`, or `:uuid`
+
+**Note**: `ao/schema` is required for Datomic-persisted entities (like `account`). For read-only external API entities (like SWAPI), it can be omitted.
 
 ### Reference Attributes
 
@@ -537,6 +539,7 @@ fo/debug? true  ; ⭐ Enable form debugging (logs to console)
 
 - See **FULCRO.md** for core Fulcro concepts (normalization, queries, state)
 - See **PATHOM.md** for resolver patterns and Pathom query engine
+- See **EQL.md** for copy-paste ready query examples
 - See **QUICK_REFERENCE.md** for project-specific code snippets
 - See **INTEGRATION_GUIDE.md** for adding new API integrations
 

@@ -120,6 +120,8 @@ These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step proces
 
 ## Documentation for AI Agents
 
+### Project Guides (Get Things Done)
+
 | File                   | Purpose                                             |
 | ---------------------- | --------------------------------------------------- |
 | `AGENTS.md`            | **Start here** — Commands, patterns, file locations |
@@ -127,8 +129,19 @@ These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step proces
 | `ARCHITECTURE.md`      | System overview and data flow                       |
 | `QUICK_REFERENCE.md`   | Common patterns and pitfalls                        |
 | `TROUBLESHOOTING.md`   | Error diagnosis and fixes                           |
+| `EQL.md`               | Query patterns and copy-paste examples              |
+| `TODO.md`              | Tech debt and potential improvements                |
 
-Supporting concept guides: `FULCRO.md`, `FULCRO-RAD.md`, `PATHOM.md`, `MARTIAN.md`, `RADAR.md`, `STATECHARTS.md`
+### Framework Guides (Learn Concepts)
+
+| File                   | Purpose                                             |
+| ---------------------- | --------------------------------------------------- |
+| `FULCRO.md`            | ⭐ Fulcro core (normalization, queries, idents)     |
+| `FULCRO-RAD.md`        | ⭐ RAD framework (forms, reports, attributes)       |
+| `PATHOM.md`            | ⭐ Pathom3 resolvers (input/output, query planning) |
+| `STATECHARTS.md`       | Statechart patterns (routing, backend workflows)    |
+| `MARTIAN.md`           | HTTP client exploration                             |
+| `RADAR.md`             | Runtime introspection                               |
 
 ## Development
 

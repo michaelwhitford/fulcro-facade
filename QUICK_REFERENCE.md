@@ -104,13 +104,14 @@ po/options-xform (fn [_ opts]
 ### Test a Resolver
 
 ```clojure
-(require '[us.whitford.facade.components.parser :refer [parser]])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
 
 ;; Query by entity ID
-(parser {} [{[:person/id "1"] [:person/name :person/height]}])
+(p {} [{[:person/id "1"] [:person/name :person/height]}])
 
 ;; Query collection
-(parser {} [{:swapi/all-people [:total {:results [:person/name]}]}])
+(p {} [{:swapi/all-people [:total {:results [:person/name]}]}])
 ```
 
 ### Inspect App State
@@ -126,13 +127,13 @@ po/options-xform (fn [_ opts]
 
 ```clojure
 ;; System overview
-(parser {} [:radar/overview])
+(p {} [:radar/overview])
 
 ;; All resolvers
-(parser {} [:radar/pathom-env])
+(p {} [:radar/pathom-env])
 
 ;; UI component registry  
-(parser {} [:radar/ui-registry])
+(p {} [:radar/ui-registry])
 ```
 
 See `RADAR.md` for comprehensive introspection patterns.
@@ -331,9 +332,10 @@ Access in code:
 
 | Document | Purpose |
 |----------|---------|
+| `FULCRO.md` | ⭐ Fulcro core (normalization, queries, idents) |
 | `FULCRO-RAD.md` | ⭐ RAD framework (forms, reports, attributes) |
 | `PATHOM.md` | ⭐ Pathom3 resolvers (input/output, query planning) |
-| `FULCRO.md` | ⭐ Fulcro core (normalization, queries, idents) |
+| `STATECHARTS.md` | Statechart patterns (routing, backend workflows) |
 
 ### Project Guides (Get Things Done)
 
@@ -344,17 +346,20 @@ Access in code:
 | `AGENTS.md` | AI agent instructions, REPL commands |
 | `ARCHITECTURE.md` | System overview, component tables |
 | `RADAR.md` | Runtime introspection patterns |
+| `EQL.md` | Query patterns and copy-paste examples |
 | `MARTIAN.md` | HTTP client exploration |
 | `TROUBLESHOOTING.md` | Common issues and solutions |
 | `PLAN.md` | Feature documentation |
 | `CHANGELOG.md` | Version history |
+| `TODO.md` | Tech debt and potential improvements |
 
 ## Examples
 
-All three API integrations are complete working examples:
+All four API integrations are complete working examples:
 
 - **SWAPI** - Complex: Multiple entities, relationships, pagination
 - **HPAPI** - Medium: Multiple entities, filtering
 - **IP API** - Simple: Single entity, query parameters
+- **Wttr** - Simple: Weather API, bridge resolver (uses IP location)
 
 Files for each: `<api>.yml`, `components/<api>.clj`, `model/<api>.cljc`, `model_rad/<api>.cljc`, `ui/<api>_forms.cljc`

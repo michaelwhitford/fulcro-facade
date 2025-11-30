@@ -2,7 +2,7 @@
 
 Fulcro RAD application. Namespace: us.whitford.facade
 
-Planning: PLAN.md | Changes: CHANGELOG.md | Scratchpad: PLAY.md
+Planning: PLAN.md | Changes: CHANGELOG.md | AI Assessment: PLAY.md
 
 ## AI Quickstart
 
@@ -29,11 +29,12 @@ Planning: PLAN.md | Changes: CHANGELOG.md | Scratchpad: PLAY.md
 ## Agent ↔ User Communication
 
 ```clj
-;; Notification (fire-and-forget)
+;; Notification (fire-and-forget) - CLJS REPL only
+;; First: (shadow/repl :main) to connect to browser
 (require '[us.whitford.facade.ui.toast :refer [toast!]])
 (toast! "Task complete! 🤖")
 
-;; Yes/No question (poll for answer)
+;; Yes/No question (poll for answer) - CLJ REPL
 (require '[us.whitford.facade.model.prompt :as prompt])
 (def q (prompt/ask! "Deploy?"))
 (prompt/get-result q)  ;; {:status :completed :answer true}
@@ -41,8 +42,17 @@ Planning: PLAN.md | Changes: CHANGELOG.md | Scratchpad: PLAY.md
 
 ## Documentation
 
+### Project Guides
 - QUICK_REFERENCE.md - Essential patterns
 - INTEGRATION_GUIDE.md - Adding new APIs
 - TROUBLESHOOTING.md - Common issues
 - RADAR.md - Runtime introspection
 - ARCHITECTURE.md - System overview
+- EQL.md - Query patterns and examples
+- TODO.md - Tech debt and improvements
+
+### Framework Concepts
+- FULCRO.md - Core Fulcro (normalization, idents, queries)
+- FULCRO-RAD.md - RAD layer (forms, reports, attributes)
+- PATHOM.md - Resolver patterns and data fetching
+- STATECHARTS.md - Statechart patterns (routing, workflows)

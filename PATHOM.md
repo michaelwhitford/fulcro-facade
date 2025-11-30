@@ -329,10 +329,11 @@ Pathom automatically:
 
 ```clojure
 ;; In this project, use RADAR
-(require '[us.whitford.facade.components.parser :refer [parser]])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
 
 ;; Run query and check logs
-(parser {} [{:swapi/all-people [:person/name]}])
+(p {} [{:swapi/all-people [:person/name]}])
 
 ;; Pathom logs show which resolvers ran and in what order
 ```
@@ -521,10 +522,11 @@ Pathom adds metadata about errors:
 ### 1. Use RADAR to Inspect
 
 ```clojure
-(require '[us.whitford.facade.components.parser :refer [parser]])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
 
 ;; See all available resolvers
-(parser {} [:radar/pathom-env])
+(p {} [:radar/pathom-env])
 
 ;; Look at resolver details:
 ;; {:resolvers {:root [...] :entity [...] :derived [...]}}

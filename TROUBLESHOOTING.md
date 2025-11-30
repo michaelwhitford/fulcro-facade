@@ -50,8 +50,9 @@ If still not working:
 **Diagnosis**:
 ```clojure
 ;; Check if resolver is registered
-(require '[us.whitford.facade.components.parser :refer [parser]])
-(parser {} [:radar/pathom-env])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
+(p {} [:radar/pathom-env])
 ;; Look for your resolver in the output
 ```
 
@@ -96,6 +97,13 @@ If still not working:
   (let [result (fetch-thing id)]
     (tap> {:result result})
     result))
+```
+
+You can also test resolvers directly:
+```clojure
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
+(p {} [{[:thing/id "1"] [:thing/name]}])
 ```
 
 **Common Causes**:
@@ -199,8 +207,8 @@ If `:result` shows an ident but the component expects data, the query is wrong:
 (require '[com.fulcrologic.fulcro.components :as comp])
 (comp/get-query MyForm)
 
-;; Test query in REPL
-(parser {} [{[:thing/id "1"] (comp/get-query MyForm)}])
+;; Test query in REPL (using p from earlier setup)
+(p {} [{[:thing/id "1"] (comp/get-query MyForm)}])
 ```
 
 **Solutions**:
@@ -393,12 +401,13 @@ Common types:
 
 **Command**: `clj-kondo --lint .`
 
-**Expected output**: 2 errors, 2 warnings
+**Expected output**: 2 errors, 2 warnings, 1 info
 
 These are intentional warts left to verify AI agents check lint output correctly:
 - `lib/logging.clj:46-47` - Unresolved `_`, `err` - false positive from taoensso.encore/if-let
 - `model/hpapi.cljc` - Unused UUID import
 - `model/swapi.cljc` - Unused UUID import
+- `.clj-kondo/imports/.../clj_kondo_hooks.clj` - Info about single arg to `str` (guardrails import)
 
 **Common fixable errors**:
 1. **Unresolved symbol**
@@ -555,7 +564,7 @@ When something isn't working:
    (m.myapi/fetch-thing "1")
    
    ;; 3. Test resolver
-   (parser {} [{[:thing/id "1"] [:thing/name]}])
+   (p {} [{[:thing/id "1"] [:thing/name]}])
    
    ;; 4. Test in UI
    ```
@@ -568,10 +577,13 @@ When something isn't working:
 
 4. **Check runtime state**
    ```clojure
-   ;; See all resolvers
-   (parser {} [:radar/pathom-env])
+   (require '[us.whitford.fulcro-radar.api :as radar])
+   (def p (radar/get-parser))
    
-   ;; See app state
+   ;; See all resolvers
+   (p {} [:radar/pathom-env])
+   
+   ;; See app state (from CLJS repl)
    @(::app/state-atom @SPA)
    ```
 

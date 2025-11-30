@@ -15,7 +15,12 @@ Facade is a Fulcro RAD application that serves as a client to multiple backend A
 | Entity Types | 16 |
 | References | 15 |
 
-Run `(-> (p {} [:radar/overview]) :radar/overview :radar/summary)` for current counts.
+Run the following for current counts:
+```clj
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
+(-> (p {} [:radar/overview]) :radar/overview :radar/summary)
+```
 
 ## APIs
 
@@ -43,14 +48,16 @@ Run `(-> (p {} [:radar/overview]) :radar/overview :radar/summary)` for current c
 
 ### Core Infrastructure
 
-| File                             | Purpose                           |
-| -------------------------------- | --------------------------------- |
-| `components/parser.clj`          | Pathom3 parser with all resolvers |
-| `components/config.clj`          | Mount-based configuration loading |
-| `components/database.clj`        | Datomic connection management     |
-| `components/server.clj`          | HTTP server (ring)                |
-| `components/ring_middleware.clj` | Request/response middleware       |
-| `components/statecharts.clj`     | Statechart routing                |
+| File                             | Purpose                               |
+| -------------------------------- | ------------------------------------- |
+| `components/parser.clj`          | Pathom3 parser with all resolvers     |
+| `components/config.clj`          | Mount-based configuration loading     |
+| `components/database.clj`        | Datomic connection management         |
+| `components/server.clj`          | HTTP server (ring)                    |
+| `components/ring_middleware.clj` | Request/response middleware           |
+| `components/statecharts.clj`     | Statechart routing                    |
+| `components/interceptors.clj`    | Shared martian interceptors (tap/log) |
+| `components/utils.cljc`          | Shared utilities (encoding, parsing)  |
 
 ### API Clients
 
@@ -70,13 +77,41 @@ Run `(-> (p {} [:radar/overview]) :radar/overview :radar/summary)` for current c
 | `components/save_middleware.clj`   | Form save processing        |
 | `components/delete_middleware.clj` | Entity deletion processing  |
 
-### Application Layers
+### Model Layer
+
+| File                    | Purpose                                     |
+| ----------------------- | ------------------------------------------- |
+| `model/swapi.cljc`      | SWAPI resolvers and data transformation     |
+| `model/hpapi.cljc`      | Harry Potter resolvers                      |
+| `model/ipapi.cljc`      | IP geolocation resolvers                    |
+| `model/wttr.cljc`       | Weather resolvers                           |
+| `model/account.cljc`    | Account entity resolvers                    |
+| `model/entity.cljc`     | Shared entity resolvers                     |
+| `model/file.cljc`       | File upload handling                        |
+| `model/agent_comms.cljc`| CLJ↔CLJS agent communication (inbox-based)  |
+| `model/prompt.cljc`     | Statechart-based user prompts (ask!/answer) |
+
+### RAD Attributes
 
 | Directory          | Purpose                           |
 | ------------------ | --------------------------------- |
-| `model/*.cljc`     | Resolvers and business logic      |
 | `model_rad/*.cljc` | RAD attribute definitions         |
-| `ui/*.cljc`        | Fulcro components, forms, reports |
+
+### UI Layer
+
+| File                   | Purpose                               |
+| ---------------------- | ------------------------------------- |
+| `ui/root.cljc`         | App root, routing, navigation         |
+| `ui/*_forms.cljc`      | RAD forms and reports per API         |
+| `ui/search_forms.cljc` | Universal search across all APIs      |
+| `ui/toast.cljc`        | Toast notifications + prompt polling  |
+| `ui/game.cljc`         | Interactive toast-based games         |
+
+### Library
+
+| File               | Purpose                       |
+| ------------------ | ----------------------------- |
+| `lib/logging.clj`  | Timbre logging configuration  |
 
 ## Configuration
 
@@ -112,13 +147,54 @@ See `components/parser.clj` for implementation.
 ## Diagnostic Queries
 
 ```clojure
-(require '[us.whitford.facade.components.parser :as parser])
+(require '[us.whitford.fulcro-radar.api :as radar])
+(def p (radar/get-parser))
 
 ;; System overview
-(parser/parser {} [:radar/overview])
+(p {} [:radar/overview])
 
 ;; Pathom environment (resolvers, mutations)
-(parser/parser {} [:radar/pathom-env])
+(p {} [:radar/pathom-env])
 ```
 
 See `RADAR.md` for comprehensive introspection patterns.
+
+## Agent Communication
+
+Two mechanisms for CLJ REPL ↔ Browser communication:
+
+### Toast Notifications (CLJS, fire-and-forget)
+
+```clojure
+;; From CLJS REPL - displays toast in browser
+(require '[us.whitford.facade.ui.toast :refer [toast!]])
+(toast! "Task complete! 🤖")
+```
+
+### Statechart Prompts (CLJ → Browser → CLJ)
+
+```clojure
+;; Ask a yes/no question from CLJ REPL
+(require '[us.whitford.facade.model.prompt :as prompt])
+(def q (prompt/ask! "Deploy to production?"))
+;; => {:session-id :prompt/abc123 :status :awaiting-response}
+
+;; Poll for answer (user sees toast in browser)
+(prompt/get-result q)
+;; => {:status :completed :answer true}
+```
+
+The prompt system uses statecharts for clean state management:
+- States: `:ask/idle` → `:ask/pending` → `:ask/completed` | `:ask/timeout`
+- Browser polls for pending questions and shows toast UI
+- Answers flow back via Pathom mutation
+
+### Agent Messages (CLJS → CLJ inbox)
+
+```clojure
+;; From CLJS - send message to CLJ inbox
+(comp/transact! @SPA [(agent-comms/send-message {:message "hello" :data {:foo 1}})])
+
+;; From CLJ - read inbox
+@us.whitford.facade.model.agent-comms/inbox
+```
