@@ -33,6 +33,7 @@ Radar keys from `(p {} [:radar/pathom-env])`:
 - `:resolvers` - `:root` (EQL entry points), `:entity` (by-id), `:derived`
 - `:mutations` - available mutations with params/output
 - `:capabilities` - what's available (parser, datomic, blob-stores)
+- `:counts` - resolver/mutation counts for quick overview
 
 ## EQL Query Discovery
 
@@ -47,6 +48,9 @@ Radar keys from `(p {} [:radar/pathom-env])`:
 ;; Use report pattern directly - substitute actual :source and :columns from above
 (p {} [{<:source-key> [<:column1> <:column2> ...]}])
 ```
+
+**Note:** Report columns show queryable fields, but the resolver output shape varies by API.
+See "API Output Shapes Vary" below for examples.
 
 **Resolver discovery** (when reports don't cover your use case):
 
@@ -70,6 +74,26 @@ Radar keys from `(p {} [:radar/pathom-env])`:
 ;; Simple key query (no subselection)
 (p {} [<:some-root-key>])
 ```
+
+### API Output Shapes Vary
+
+Different APIs return different structures. Check actual output before assuming shape:
+
+```clj
+;; SWAPI - paginated wrapper with :total and :results
+(p {} [{:swapi/all-people [:total {:results [:person/name]}]}])
+;; => {:swapi/all-people {:total 82, :results [{:person/name "Luke"}...]}}
+
+;; HPAPI - flat array (no wrapper)
+(p {} [{:hpapi/all-characters [:character/name :character/house]}])
+;; => {:hpapi/all-characters [{:character/name "Harry Potter"...}...]}
+
+;; IPAPI - single entity collections
+(p {} [{:ipapi/all-ip-lookups [:ip-info/query :ip-info/country]}])
+```
+
+**Tip:** If a query returns empty maps `[{} {} {}...]`, you're using the wrong shape.
+Try querying without nested `:results` wrapper first.
 
 ## Client State Inspection
 

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **RADAR.md**: Enhanced EQL query discovery documentation
+  - Added `:counts` to pathom-env keys documentation
+  - Added "API Output Shapes Vary" section with concrete examples for SWAPI, HPAPI, IPAPI
+  - Added diagnostic tip for empty map results (wrong query shape)
+  - Added forward-reference note linking to output shape examples
+
+- **EQL.md**: Renamed from `eql-queries.txt` and expanded significantly
+  - Added 20+ working copy-paste ready query examples
+  - Organized by API pattern (SWAPI paginated, HPAPI flat, etc.)
+  - Added quick discovery section with radar introspection patterns
+  - Preserved EQL syntax reference with improved comments
+
+- **ARCHITECTURE.md**: Added missing API integrations
+  - Added IPAPI (IP Geolocation) section
+  - Added Wttr (Weather) section
+  - Updated API clients table with ipapi.clj and wttr.clj
+
+- **AGENTS.md**: Condensed agent communication section
+  - Simplified toast and prompt examples
+  - Removed verbose workflow details (available in other docs)
+
 ### Added
 - **Statechart-based prompt system** for AI agent interactions
   - New `model/prompt.cljc` with explicit state management (`:ask/idle`, `:ask/pending`, `:ask/completed`, `:ask/timeout`)

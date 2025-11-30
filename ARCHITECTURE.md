@@ -29,6 +29,16 @@ Run `(-> (p {} [:radar/overview]) :radar/overview :radar/summary)` for current c
 - Characters (students, staff, by house), Spells
 - https://hp-api.onrender.com
 
+### IPAPI (IP Geolocation)
+
+- IP address lookup, location, ISP info
+- http://ip-api.com
+
+### Wttr (Weather)
+
+- Current weather, forecasts by location
+- https://wttr.in
+
 ## Key Components
 
 ### Core Infrastructure
@@ -44,10 +54,12 @@ Run `(-> (p {} [:radar/overview]) :radar/overview :radar/summary)` for current c
 
 ### API Clients
 
-| File                   | Purpose                      |
-| ---------------------- | ---------------------------- |
-| `components/swapi.clj` | SWAPI HTTP client (martian)  |
-| `components/hpapi.clj` | HP API HTTP client (martian) |
+| File                   | Purpose                       |
+| ---------------------- | ----------------------------- |
+| `components/swapi.clj` | SWAPI HTTP client (martian)   |
+| `components/hpapi.clj` | HP API HTTP client (martian)  |
+| `components/ipapi.clj` | IP API HTTP client (martian)  |
+| `components/wttr.clj`  | Weather HTTP client (martian) |
 
 ### RAD Infrastructure
 
