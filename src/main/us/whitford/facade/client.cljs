@@ -29,6 +29,7 @@
     [us.whitford.facade.ui.account-forms :refer [AccountForm AccountList]]
     [us.whitford.facade.ui.hpapi-forms :refer [CharacterForm CharacterList
                                                SpellForm SpellList]]
+    [us.whitford.facade.ui.ipapi-forms :refer [IpLookupWidget IpLookupList IpInfoForm]]
     [us.whitford.facade.ui.root :refer [LandingPage Root]]
     [us.whitford.facade.ui.search-forms :refer [SearchReport]]
     [us.whitford.facade.ui.swapi-forms :refer [PersonForm PersonList Person
@@ -99,6 +100,12 @@
                             :route/path   ["spells"]})
           (ri/form-state {:route/target `SpellForm
                           :route/path    ["spell"]})
+          (uir/rstate {:route/target `IpLookupWidget
+                       :route/path   ["ip-lookup"]})
+          (ri/report-state {:route/target `IpLookupList
+                            :route/path   ["ip-lookups"]})
+          (ri/form-state {:route/target `IpInfoForm
+                          :route/path    ["ip-info"]})
           )))))
 
 (defonce app (-> (rad-app/fulcro-rad-app

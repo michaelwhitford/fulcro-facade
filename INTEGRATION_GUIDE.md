@@ -334,11 +334,9 @@ Create forms and reports for your API data.
 - Use `ri/edit!` to navigate to forms
 - Always create factory functions with `comp/factory`
 
-### 9. Add Routes and Menu to Root UI
+### 9. Add Menu Items to Root UI
 
 **File**: `src/main/us/whitford/facade/ui/root.cljc`
-
-Add your UI components to the app:
 
 **Step 1: Require your components**:
 ```clojure
@@ -348,23 +346,65 @@ Add your UI components to the app:
     [us.whitford.facade.ui.myapi-forms :refer [ThingList ThingForm]]))
 ```
 
-**Step 2: Add to router targets** (if using statechart routing):
-```clojure
-(defrouter MainRouter [this {:keys [current-state route-factory route-props]}]
-  {:always-render-body? true
-   :router-targets      [LandingPage 
-                         ;; ... existing targets ...
-                         ThingList ThingForm]}  ; ADD HERE
-  ...)
-```
-
-**Step 3: Add menu items**:
+**Step 2: Add menu items**:
 ```clojure
 (ui-dropdown {:className "item" :text "My API"}
   (ui-dropdown-menu {}
     (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `ThingList {}))}
       (dom/i :.compact.ui.left.floated.list.icon " Things"))))
 ```
+
+### 10. Register Routes in Statechart Configuration
+
+**File**: `src/main/us/whitford/facade/client.cljs`
+
+This is the **critical step** that enables routing. Without this, menu clicks won't load your components.
+
+**Step 1: Require your components**:
+```clojure
+(ns us.whitford.facade.client
+  (:require
+    ;; ... existing requires ...
+    [us.whitford.facade.ui.myapi-forms :refer [ThingList ThingForm]]))
+```
+
+**Step 2: Add route states to `application-chart`**:
+
+Find the `application-chart` definition and add your components inside the `(state {:id :state/running} ...)` block:
+
+```clojure
+(def application-chart
+  (statechart {:name "fulcro-swapi"}
+    (uir/routing-regions
+      (uir/routes {:id :region/routes
+                   :routing/root Root}
+        (state {:id :state/running}
+          ;; ... existing routes ...
+          
+          ;; ADD YOUR ROUTES HERE:
+          ;; For RAD reports, use ri/report-state
+          (ri/report-state {:route/target `ThingList
+                            :route/path   ["things"]})
+          ;; For RAD forms, use ri/form-state
+          (ri/form-state {:route/target `ThingForm
+                          :route/path   ["thing"]})
+          ;; For simple components (non-RAD), use uir/rstate
+          (uir/rstate {:route/target `ThingWidget
+                       :route/path   ["thing-widget"]}))))))
+```
+
+**Route state types**:
+
+| Component Type | Route Function | When to Use |
+|----------------|----------------|-------------|
+| `ri/report-state` | RAD Report | Components using `report/defsc-report` |
+| `ri/form-state` | RAD Form | Components using `form/defsc-form` |
+| `uir/rstate` | Simple Component | Regular `defsc` components |
+
+**Key points**:
+- The `:route/path` should match the `ro/route` or `fo/route-prefix` in your UI component
+- Use backtick (`) before component names to get the fully-qualified symbol
+- Routes must be inside the `(state {:id :state/running} ...)` block
 
 ## Testing Your Integration
 
@@ -406,6 +446,8 @@ Add your UI components to the app:
 | Model | `src/main/us/whitford/facade/model/<api>.cljc` | `model/swapi.cljc` |
 | RAD Attributes | `src/main/us/whitford/facade/model_rad/<api>.cljc` | `model_rad/swapi.cljc` |
 | UI Forms | `src/main/us/whitford/facade/ui/<api>_forms.cljc` | `ui/swapi_forms.cljc` |
+| UI Root/Menu | `src/main/us/whitford/facade/ui/root.cljc` | (menu items) |
+| Statechart Routes | `src/main/us/whitford/facade/client.cljs` | (application-chart) |
 | Config | `src/main/config/defaults.edn` | (bottom of file) |
 
 ## Common Patterns
@@ -483,8 +525,8 @@ Use this checklist when adding a new API:
 - [ ] Register resolvers in `components/parser.clj`
 - [ ] Test resolvers via parser in REPL
 - [ ] Create UI forms in `ui/<api>_forms.cljc`
-- [ ] Add routes to `ui/root.cljc`
-- [ ] Add menu items to `ui/root.cljc`
+- [ ] Import and add menu items in `ui/root.cljc`
+- [ ] **Register routes in `client.cljs` statechart** ⚠️ Critical!
 - [ ] Restart server
 - [ ] Test in browser
 - [ ] Run linter: `clj-kondo --lint .`
@@ -511,6 +553,16 @@ For complete working examples, see:
 - Check that resolvers are exported in `(def resolvers [...])`
 - Verify resolvers are added to `all-resolvers` in `parser.clj`
 - Check `::pco/output` matches your query keys
+
+### Menu click does nothing / Component doesn't load
+- **Most common cause**: Routes not registered in `client.cljs` statechart
+- Verify component is imported in `client.cljs`
+- Verify route is added to `application-chart` with correct route type:
+  - `ri/report-state` for RAD reports
+  - `ri/form-state` for RAD forms  
+  - `uir/rstate` for simple components
+- Check that `:route/path` matches `ro/route` or `fo/route-prefix`
+- Reload browser after changes (hot reload may not pick up statechart changes)
 
 ### Data not loading in UI
 - Check browser console for errors

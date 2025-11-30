@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- IP Geolocation menu items now load components correctly
+  - Added missing route registrations in `client.cljs` statechart configuration
+  - Registered `IpLookupWidget`, `IpLookupList`, and `IpInfoForm` in `application-chart`
+
+### Changed
+- Removed unused `MainRouter` from `root.cljc` (migrated to statechart routing)
+- **INTEGRATION_GUIDE.md**: Added critical Step 10 for statechart route registration
+  - Documents how to register routes in `client.cljs` `application-chart`
+  - Explains when to use `ri/report-state`, `ri/form-state`, and `uir/rstate`
+  - Added troubleshooting section for "menu click does nothing" issue
+  - Updated checklist with ⚠️ warning for this commonly missed step
+  - Added `client.cljs` to file location reference table
+
 ### Added
 - Martian client exploration documentation in MARTIAN.md
   - REPL patterns for discovering API operations at runtime
