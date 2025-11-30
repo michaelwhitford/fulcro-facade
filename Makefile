@@ -8,4 +8,4 @@ release:
 	TIMBRE_LEVEL=:warn npx shadow-cljs release main
 
 server:
-	clj -A:dev -M -m us.whitford.swapi.components.server
+	clj -A:dev -M -m us.whitford.facade.components.server

@@ -1,45 +1,86 @@
 = Fulcro API Client: facade
 
-An api client written for fulcro-rad. A toy app that acts as a client to multiple API backends.
+A Fulcro RAD application that serves as a client to multiple API backends. Built as a learning project to explore Fulcro and Fulcro RAD patterns.
 
-I wrote this as a way of having app code I can share as I try to learn fulcro and fulcro-rad.
+== Features
 
-Application is barely working, and only the link:https//swapi.dev[starwars api] is in-progress.
+* **Universal Search** - Search across Star Wars and Harry Potter universes from a single interface
+* **SWAPI Integration** - People, Films, Planets, Species, Vehicles, Starships (link:https://swapi.dev[swapi.dev])
+* **Harry Potter API** - Characters and Spells (link:https://hp-api.onrender.com[hp-api.onrender.com])
+* **10 Forms, 10 Reports** - Full RAD-based CRUD with statechart routing
+* **Account Management** - Datomic-backed user accounts with file uploads
+* **Test Suite** - 59 tests with 627 assertions
+
+== Documentation
+
+* `AGENTS.md` - Quick reference for AI assistants and developers
+* `RADAR.md` - Runtime introspection and EQL query discovery
+* `ARCHITECTURE.md` - System overview and component structure
+* `PLAN.md` - Feature documentation and implementation details
+* `CHANGELOG.md` - Version history
 
 == Usage
 
+[source, bash]
+-----
+# Run tests
+clojure -M:run-tests
+
+# Lint
+clj-kondo --lint .
+
+# Check for outdated dependencies
+clojure -M:outdated
+-----
+
 == Building the SPA
 
-You must compile the CLJS source to run the client. If you want to be
-able to edit it, just start a shadow-cljs watch:
+Compile the CLJS source to run the client:
 
 [source, bash]
 -----
-$ yarn
-$ shadow-cljs watch main
+$ yarn                      # or: npm install
+$ shadow-cljs watch main    # development with hot reload
 -----
 
-if you don't have `yarn`, use `npm install` instead.
+For production builds:
+
+[source, bash]
+-----
+$ make release
+-----
 
 == Running the Server
 
-The server in this template uses an in-memory datomic-free database. You can start it from the REPL by including the
-deps `:dev` alias.
+The server uses an in-memory Datomic database. Start from the REPL with the `:dev` alias:
 
 [source, bash]
 -----
 $ clj -A:dev
-user=> (clojure.core/require 'development)
+user=> (require 'development)
 user=> (development/start)
 -----
 
-== Restarting
+== Development Functions
 
-There are `stop`, `start`, `fast-restart`, and `restart` functions in `development`.
-The `restart` function will stop the server, reload all source, and start it again. You can often get by
-with manually evaluating functions with a running server, but if you modify something that is closed over during
-start (such as a function that is embedded in the middleware) you'll have to load the appropriate files and stop/start.
-While the source is small it is often less hassle to just use `restart`.
+[cols="1,3"]
+|===
+|Function |Description
+
+|`(development/start)`
+|Cold start the server
+
+|`(development/stop)`
+|Stop the server
+
+|`(development/restart)`
+|Stop, refresh all source, and restart
+
+|`(development/fast-restart)`
+|Stop and restart without refreshing
+|===
+
+TIP: Use `restart` when you've modified middleware or closed-over functions. For simple changes, evaluate directly in the REPL.
 
 == LICENSE
 

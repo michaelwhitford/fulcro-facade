@@ -1,222 +1,253 @@
-# PLAY.md - Exploration Findings
+# PLAY.md - Martian Utility Evaluation Report
 
-## Summary
+**Date:** 2025-11-30  
+**Purpose:** Evaluate MARTIAN.md documentation effectiveness for AI-guided API exploration
 
-Facade is a well-structured Fulcro RAD application that provides a unified client for SWAPI (Star Wars API) and HPAPI (Harry Potter API). The app demonstrates good use of Fulcro's architecture including statecharts for routing, Pathom3 for resolvers, and RAD for forms/reports.
+---
 
-## Project Statistics
+## Executive Summary
 
-| Component | Count |
-|-----------|-------|
-| Mount States | 11 |
-| RAD Attributes | 94 |
-| SWAPI Resolvers | 13 |
-| HPAPI Resolvers | 4 |
-| Forms | 10 |
-| Reports | 10 |
-| Entity Types | 12 |
+The MARTIAN.md documentation is **excellent for AI guidance**. It provides clear, actionable patterns that an AI can follow to discover and execute API operations at runtime. All documented features work as described.
 
-## What's Working Well
+### Verification Status
 
-### 1. Clean Architecture
-- Clear separation between model (`model/`), RAD definitions (`model_rad/`), and UI (`ui/`)
-- Mount states properly manage component lifecycle
-- Configuration is centralized and hierarchical (`config/defaults.edn`, `config/dev.edn`)
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `martian/explore` (list) | ✅ Works | Returns vector of `[operation-keyword description]` |
+| `martian/explore` (detail) | ✅ Works | Returns `{:summary :parameters :returns}` |
+| `martian/response-for` | ✅ Works | Returns promise, deref to get result |
+| `martian/request-for` | ✅ Works | Preview request without executing |
+| `martian/url-for` | ✅ Works | Get URL only |
+| Optional/Required params | ✅ Works | `OptionalKey` wrapper distinguishes them |
+| tap> interceptors | ✅ Works | Requests/responses logged automatically |
+| SWAPI pagination | ✅ Works | `:page` param, body has `:count :next :previous :results` |
+| HPAPI direct arrays | ✅ Works | No pagination wrapper |
 
-### 2. Pathom3 Integration
-- Parser is well-configured with proper middleware stacking
-- RADAR diagnostic tool provides excellent visibility into the system
-- Query params are normalized for easier resolver access
+---
 
-### 3. Martian HTTP Client
-- Swagger/OpenAPI specs drive API client generation (`swapi.yml`, `hpapi.yml`)
-- Interceptors allow tap> debugging of requests/responses
+## Test Results
 
-### 4. Statecharts Routing
-- Modern statechart-based routing with `ui-routes`
-- Route change protection for unsaved forms
-- Good integration with RAD forms/reports
+### 1. Operation Discovery
 
-### 5. Testing Approach
-- Configuration tests validate structure without starting full system
-- fulcro-spec style assertions are clean
-
-## Recommendations for Improvement
-
-### 1. **Reduce Resolver Duplication (High Impact)**
-
-The SWAPI resolvers (`model/swapi.cljc`) contain significant duplication. All 6 list resolvers follow the same pattern:
-
+**SWAPI Operations:**
 ```clojure
-;; Current: Each resolver is ~20 lines with identical structure
-(pco/defresolver all-people-resolver ...)
-(pco/defresolver all-vehicles-resolver ...)
-(pco/defresolver all-starships-resolver ...)
-;; etc.
+(martian/explore swapi-martian)
+;; => [[:starship "Returns a single starship"]
+;;     [:specie "Returns a single specie"]
+;;     [:vehicles "Returns a list of vehicles"]
+;;     [:person "Returns a single person"]
+;;     [:films "Returns a list of films"]
+;;     [:starships "Returns a list of starships"]
+;;     [:vehicle "Returns a single vehicle"]
+;;     [:species "Returns a list of species"]
+;;     [:film "Returns a single film"]
+;;     [:planets "Returns a list of planets"]
+;;     [:people "Return a list of people"]
+;;     [:planet "Returns a single planet"]]
 ```
 
-**Suggestion**: Create a resolver factory:
-
+**HPAPI Operations:**
 ```clojure
-(defn make-list-resolver [entity-key output-key output-spec]
-  (pco/resolver
-    {::pco/output [{output-key [:total {:results output-spec}]}]}
-    (fn [{:keys [query-params]} _]
-      (let [{:keys [search]} query-params
-            opts (build-opts search query-params)
-            {:keys [results total-count]} (swapi-data-paginated entity-key opts)]
-        {output-key {:results (or results []) :total (or total-count 0)}}))))
-
-(def all-people-resolver (make-list-resolver :people :swapi/all-people person-output-spec))
-(def all-vehicles-resolver (make-list-resolver :vehicles :swapi/all-vehicles vehicle-output-spec))
+(martian/explore hpapi-martian)
+;; => [[:characters "Return a list of characters"]
+;;     [:spells "Return a list of spells"]]
 ```
 
-This could reduce ~150 lines to ~50 lines while making the pattern explicit.
+### 2. Parameter Schema Detection
 
-### 2. **Extract Report Control Boilerplate (Medium Impact)**
-
-Every report in `swapi_forms.cljc` repeats identical pagination controls:
-
+**List operation (optional params):**
 ```clojure
-ro/controls {::refresh ...
-             ::prior-page ...
-             ::next-page ...
-             ::page-info ...}
-ro/control-layout {:action-buttons [::refresh ::prior-page ::page-info ::next-page]}
+(-> (martian/explore swapi-martian :people) :parameters keys)
+;; => (#schema.core.OptionalKey{:k :search} 
+;;     #schema.core.OptionalKey{:k :page})
 ```
 
-**Suggestion**: Create shared control definitions:
-
+**Single entity operation (required param):**
 ```clojure
-(def pagination-controls {...})
-(def pagination-layout {...})
-
-;; Then in each report:
-ro/controls (merge pagination-controls {...specific...})
-ro/control-layout pagination-layout
+(-> (martian/explore swapi-martian :person) :parameters keys)
+;; => (:id)  ;; No OptionalKey wrapper = required
 ```
 
-### 3. **Simplify URL->ID Transformation (Low Impact)**
-
-The `transform-swapi` function chains 9 nearly identical `mapv` calls:
-
+**No params:**
 ```clojure
-(defn transform-swapi [input]
-  (->> (mapv swapi-id input)
-       (mapv (fn [m] (update-in-contains m [:films] ...)))
-       (mapv (fn [m] (update-in-contains m [:starships] ...)))
-       ;; ... 7 more
+(-> (martian/explore hpapi-martian :spells) :parameters)
+;; => {}
 ```
 
-**Suggestion**: Use a single reduce with a list of keys to transform:
+### 3. Request Execution
 
+**SWAPI search (paginated response):**
 ```clojure
-(def url-fields #{:films :starships :species :vehicles :residents 
-                  :people :characters :pilots :planets :homeworld})
-
-(defn transform-swapi [input]
-  (->> input
-       (mapv swapi-id)
-       (mapv (fn [m]
-               (reduce (fn [acc k]
-                         (if-let [v (get acc k)]
-                           (update acc k #(if (coll? %) 
-                                            (mapv swapiurl->id %) 
-                                            (swapiurl->id %)))
-                           acc))
-                       m url-fields)))))
+@(martian/response-for swapi-martian :people {:search "luke"})
+;; => {:status 200
+;;     :body {:count 1
+;;            :next nil
+;;            :previous nil
+;;            :results [{:name "Luke Skywalker" :birth_year "19BBY" ...}]}
+;;     :headers {...}}
 ```
 
-### 4. **Add More Test Coverage (Medium Impact)**
-
-Current tests only cover configuration. Consider adding:
-- Resolver unit tests (mock API responses)
-- URL transformation tests
-- Form state machine tests
-
-### 5. **Consider Caching for Read-Only APIs**
-
-Since SWAPI and HPAPI data rarely changes, consider:
-- Adding `atom`-based caching for API responses
-- TTL-based cache invalidation
-- This would reduce API calls and improve UX
-
-### 6. **Remove Commented/Dead Code**
-
-Several files have commented-out code blocks that could be cleaned up:
-- `swapi.clj`: Commented `image-encoder` setup
-- `hpapi.clj`: Same pattern
-- `swapi_forms.cljc`: Multiple commented-out mutations
-
-### 7. **Standardize Naming Conventions**
-
-Entity naming is inconsistent:
-- SWAPI uses `:specie/id` (singular) for species entities
-- Some attributes use underscores (`:person/birth_year`) from API response
-- Consider using kebab-case consistently or documenting the convention
-
-### 8. **Extract Martian Setup Pattern**
-
-Both `swapi.clj` and `hpapi.clj` have nearly identical structure. Could be:
-
+**SWAPI single entity (direct object):**
 ```clojure
-(defn make-martian-state [config-key]
-  (defstate name
-    :start
-    (let [{:keys [swagger-file server-url]} (get config config-key)]
-      (martian-http/bootstrap-openapi swagger-file {...}))))
+@(martian/response-for swapi-martian :person {:id "1"})
+;; => {:status 200
+;;     :body {:name "Luke Skywalker" :birth_year "19BBY" ...}
+;;     :headers {...}}
 ```
 
-## Interesting Patterns Observed
-
-### RADAR Diagnostic System
-The fulcro-radar integration provides excellent introspection:
-
+**HPAPI (direct array):**
 ```clojure
-(parser {} [:radar/overview])
-;; Returns mount states, forms, reports, entities, attributes, references
+@(martian/response-for hpapi-martian :spells)
+;; => {:status 200
+;;     :body [{:id "..." :name "Accio" :description "..."} ...]
+;;     :headers {...}}
 ```
 
-This is a great debugging aid during development.
+### 4. Debug Utilities
 
-### Query Param Normalization
-Smart middleware that allows resolvers to use simple keywords even when RAD sends namespaced params:
-
+**Request preview:**
 ```clojure
-(defn normalize-query-params [query-params]
-  (reduce-kv (fn [m k v]
-               (let [simple-key (keyword (name k))]
-                 (cond-> m
-                   (not (contains? m simple-key)) (assoc simple-key v))))
-    query-params query-params))
+(martian/request-for swapi-martian :people {:search "luke"})
+;; => {:method :get
+;;     :url "https://swapi.dev/api/people/"
+;;     :query-params {:search "luke"}
+;;     :headers {"Accept" "application/json"}}
 ```
 
-## Files Explored
+**URL generation:**
+```clojure
+(martian/url-for swapi-martian :person {:id "1"})
+;; => "https://swapi.dev/api/people/1"
+```
 
-- `deps.edn` - Dependencies and aliases
-- `shadow-cljs.edn` - ClojureScript build config  
-- `src/dev/development.clj` - Development utilities
-- `src/main/us/whitford/facade/components/*.clj` - Server components
-- `src/main/us/whitford/facade/model/*.cljc` - Resolvers and business logic
-- `src/main/us/whitford/facade/model_rad/*.cljc` - RAD attribute definitions
-- `src/main/us/whitford/facade/ui/*.cljc` - UI components
-- `src/main/config/*.edn` - Configuration files
-- `src/test/**` - Test files
+---
 
-## REPL Experiments
+## AI Guidance Effectiveness Analysis
 
-Tested successfully:
-- `(parser {} [:radar/overview])` - Full diagnostic output
-- `(parser {} [{:swapi/all-people [:total {:results [:person/id :person/name]}]}])` - 82 people, 10 per page
-- `(parser {} [{:hpapi/all-characters [:character/id :character/name :character/house]}])` - 400+ HP characters
-- `(martian/explore swapi-martian)` - 12 SWAPI endpoints
-- `(martian/explore hpapi-martian)` - 2 HPAPI endpoints
+### Strengths
+
+1. **Clear Setup Section** - The require statements are copy-pasteable and work immediately
+2. **Discovery Workflow** - The 3-step pattern (list → inspect → execute) is intuitive
+3. **Response Structure Tables** - The comparison between SWAPI and HPAPI response formats prevents confusion
+4. **Parameter Schema Explanation** - The `OptionalKey` notation is explained, critical for understanding required vs optional
+5. **Real Examples** - Every code block produces actual output that matches documentation
+
+### What Makes It AI-Friendly
+
+1. **Incremental complexity** - Start with listing operations, then drill down
+2. **No hidden state** - Mount states are auto-started on require
+3. **Deref convention** - The `@` for promises is consistently shown
+4. **Error response schemas** - 404 patterns documented in returns
+
+### Minor Improvements (Optional)
+
+1. **Add error handling example:**
+```clojure
+;; Handle non-existent entity
+(let [{:keys [status body]} @(martian/response-for swapi-martian :person {:id "99999"})]
+  (when (= status 404)
+    (println "Not found:" (:detail body))))
+```
+
+2. **Add batch operations note:**
+```clojure
+;; Multiple concurrent requests
+(let [luke (martian/response-for swapi-martian :person {:id "1"})
+      vader (martian/response-for swapi-martian :person {:id "4"})]
+  {:luke @luke :vader @vader})
+```
+
+3. **Add schema interpretation helper:**
+```clojure
+;; Quick param check helper
+(defn required-params [martian op]
+  (->> (-> (martian/explore martian op) :parameters keys)
+       (remove #(instance? schema.core.OptionalKey %))
+       (map keyword)))
+       
+(required-params swapi-martian :person) ;; => (:id)
+(required-params swapi-martian :people) ;; => ()
+```
+
+---
+
+## OpenAPI Spec Quality
+
+### SWAPI (swapi.yml)
+
+| Aspect | Quality | Notes |
+|--------|---------|-------|
+| Paths | ✅ Complete | All 12 endpoints (6 list + 6 single) |
+| Parameters | ✅ Correct | search/page optional, id required |
+| Response schemas | ⚠️ Verbose | Deep nesting due to $ref resolution |
+| Operation IDs | ✅ Good | Intuitive names (:people, :person, etc.) |
+
+### HPAPI (hpapi.yml)
+
+| Aspect | Quality | Notes |
+|--------|---------|-------|
+| Paths | ✅ Complete | Both endpoints covered |
+| Parameters | ✅ Correct | None required (correctly empty) |
+| Response schemas | ✅ Concise | Direct array, no pagination wrapper |
+| Operation IDs | ✅ Good | :characters, :spells |
+
+---
+
+## Component Architecture
+
+### Mount State Dependencies
+
+```
+config (defaults.edn)
+   └── swapi-martian (components/swapi.clj)
+   └── hpapi-martian (components/hpapi.clj)
+         └── interceptors (components/interceptors.clj)
+```
+
+### Interceptor Pipeline
+
+```
+[tap-response] → [default-interceptors] → [tap-request]
+     ↑                                          ↓
+  on leave                                  on enter
+(logs response)                          (logs request)
+```
+
+---
+
+## Recommendations
+
+### For Documentation
+
+1. **Keep the current structure** - It follows a logical discovery pattern
+2. **Add a "Common Patterns" section** with:
+   - Error handling
+   - Concurrent requests
+   - Parameter extraction utilities
+
+### For Implementation
+
+1. **Consider adding a helper namespace** (`us.whitford.facade.lib.martian`) with:
+   - `list-operations` - prettier output of explore
+   - `required-params` - extract required params only
+   - `sample-request` - show full request without executing
+
+### For Testing
+
+The current setup supports effective REPL-driven testing. Consider adding:
+- Property-based tests for schema validation
+- Integration tests using VCR-style recorded responses
+
+---
 
 ## Conclusion
 
-Facade is a solid demonstration of Fulcro RAD capabilities. The main opportunities for simplification lie in:
-1. Reducing boilerplate through factory functions and shared definitions
-2. Adding test coverage for core business logic
-3. Cleaning up dead code
+**MARTIAN.md is production-ready for AI guidance.** An AI assistant can:
 
-The architecture is sound and the code is readable - improvements would primarily be about DRY principles and maintainability.
+1. ✅ Discover available API operations
+2. ✅ Understand required vs optional parameters
+3. ✅ Execute requests and interpret responses
+4. ✅ Debug requests without execution
+5. ✅ Handle different response formats (paginated vs direct)
+
+The documentation effectively bridges the gap between OpenAPI specs and runtime exploration, making it an excellent reference for both human developers and AI assistants.

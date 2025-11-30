@@ -1,3 +1,36 @@
+# PLAN.md
+
+Active and completed feature plans.
+
+---
+
+# Martian Client Exploration
+
+## Overview
+
+Enable AI to explore martian HTTP clients via REPL to discover available API operations, parameters, and response schemas.
+
+## Status: ✅ COMPLETE
+
+### All Phases Complete
+- [x] Phase 1: Document `martian/explore` for operation discovery
+- [x] Phase 2: Document `martian/response-for` for request execution
+- [x] Phase 3: Create operation reference tables for SWAPI (12) and HPAPI (2)
+- [x] Phase 4: Document tap> debugging (user receives via shadow-cljs preload)
+
+---
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `MARTIAN.md` | Full documentation for martian client exploration |
+| `components/swapi.clj` | SWAPI martian client (mount state) |
+| `components/hpapi.clj` | HPAPI martian client (mount state) |
+| `components/interceptors.clj` | Shared tap> interceptors |
+
+---
+
 # Universal Search Feature
 
 ## Overview
@@ -30,85 +63,6 @@ Universal search across SWAPI (Star Wars) and Harry Potter APIs from a single Se
 | `:planet` | SWAPI | globe | `planet-1` |
 | `:character` | HP | magic | `character-{uuid}` |
 | `:spell` | HP | bolt | `spell-{uuid}` |
-
-### Data Flow
-
-```
-Search component (header)
-    ↓ set-search-term-and-run mutation
-    ↓ uir/route-to! navigates to SearchReport
-    ↓ report/run-report! triggers load
-    
-SearchReport 
-    ↓ ro/load-options adds :search-term to params
-    ↓ uism/load with params
-
-all-entities-resolver (model/entity.cljc)
-    ↓ reads :search-term from query-params
-    ↓ parallel fetch from SWAPI + HP APIs
-    ↓ transforms to unified {:entity/id :entity/name :entity/type}
-    
-SearchReport state machine
-    ↓ :event/loaded triggers filter/sort/paginate
-    ↓ populates :ui/current-rows
-    ↓ renders via SearchResultRow BodyItem
-```
-
----
-
-## Key Implementation Details
-
-### Control Parameter Flow (RAD Reports)
-
-**Global controls** (`:local? false` or unspecified):
-```clojure
-;; Storage path
-[::control/id <control-key> ::control/value]
-
-;; Example
-[:com.fulcrologic.rad.control/id ::search-term :com.fulcrologic.rad.control/value]
-```
-
-**Local controls** (`:local? true`):
-```clojure
-;; Storage path
-(conj report-ident :ui/parameters <control-key>)
-```
-
-### Passing Parameters to Resolvers
-
-Use `ro/load-options` to transform control params to resolver params:
-```clojure
-ro/load-options (fn [env]
-                  (let [params (report/current-control-parameters env)
-                        search-term (::search-term params)]
-                    {:params (assoc params :search-term search-term)}))
-```
-
-### Component Ident Best Practice
-
-Use keyword shorthand for simple idents:
-```clojure
-;; ✅ CORRECT
-:ident :entity/id
-
-;; ❌ WRONG - closure doesn't have access to props during normalization
-:ident (fn [] [:entity/id (:entity/id props)])
-```
-
-### Triggering Report from External Component
-
-```clojure
-(defmutation set-search-term-and-run [{:keys [search-term]}]
-  (action [{:keys [state app]}]
-    ;; 1. Set control value at correct path
-    (swap! state assoc-in [::control/id ::search-term ::control/value] search-term)
-    ;; 2. Trigger report run after state update
-    #?(:cljs (when app
-               (js/setTimeout 
-                 #(report/run-report! app SearchReport)
-                 100)))))
-```
 
 ---
 

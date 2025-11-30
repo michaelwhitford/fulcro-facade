@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Martian client exploration documentation in MARTIAN.md
+  - REPL patterns for discovering API operations at runtime
+  - `martian/explore` for listing operations and inspecting parameters
+  - `martian/response-for` for executing requests
+  - tap> debugging (user receives via shadow-cljs preload)
+
 - Universal search feature combining SWAPI (Star Wars) and Harry Potter API results
   - New `entity.cljc` model with unified search resolver supporting 8 entity types
   - New `entity.cljc` RAD attributes for universal entity model

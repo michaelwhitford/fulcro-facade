@@ -86,3 +86,82 @@ Radar keys from `(p {} [:radar/pathom-env])`:
 (require '[<app-ns>.application :as my-app])
 (keys @(::fulcro-app/state-atom @my-app/SPA))
 ```
+
+## RAD Report Data Flow
+
+```
+Search component (header)
+    ↓ set-search-term-and-run mutation
+    ↓ uir/route-to! navigates to SearchReport
+    ↓ report/run-report! triggers load
+    
+SearchReport 
+    ↓ ro/load-options adds :search-term to params
+    ↓ uism/load with params
+
+all-entities-resolver (model/entity.cljc)
+    ↓ reads :search-term from query-params
+    ↓ parallel fetch from SWAPI + HP APIs
+    ↓ transforms to unified {:entity/id :entity/name :entity/type}
+    
+SearchReport state machine
+    ↓ :event/loaded triggers filter/sort/paginate
+    ↓ populates :ui/current-rows
+    ↓ renders via SearchResultRow BodyItem
+```
+
+## RAD Report Patterns
+
+### Control Parameter Storage
+
+**Global controls** (`:local? false` or unspecified):
+```clj
+;; Storage path
+[::control/id <control-key> ::control/value]
+
+;; Example
+[:com.fulcrologic.rad.control/id ::search-term :com.fulcrologic.rad.control/value]
+```
+
+**Local controls** (`:local? true`):
+```clj
+;; Storage path
+(conj report-ident :ui/parameters <control-key>)
+```
+
+### Passing Parameters to Resolvers
+
+Use `ro/load-options` to transform control params to resolver params:
+```clj
+ro/load-options (fn [env]
+                  (let [params (report/current-control-parameters env)
+                        search-term (::search-term params)]
+                    {:params (assoc params :search-term search-term)}))
+```
+
+### Triggering Report from External Component
+
+```clj
+(defmutation set-search-term-and-run [{:keys [search-term]}]
+  (action [{:keys [state app]}]
+    ;; 1. Set control value at correct path
+    (swap! state assoc-in [::control/id ::search-term ::control/value] search-term)
+    ;; 2. Trigger report run after state update
+    #?(:cljs (when app
+               (js/setTimeout 
+                 #(report/run-report! app SearchReport)
+                 100)))))
+```
+
+## RAD Component Patterns
+
+### Component Ident
+
+Use keyword shorthand for simple idents:
+```clj
+;; ✅ CORRECT
+:ident :entity/id
+
+;; ❌ WRONG - closure doesn't have access to props during normalization
+:ident (fn [] [:entity/id (:entity/id props)])
+```
