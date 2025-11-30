@@ -1,7 +1,7 @@
 # Fulcro Framework Guide
 
-> **Purpose**: This document explains core Fulcro concepts used in this project.  
-> **Audience**: AI agents and developers new to Fulcro.  
+> **Purpose**: This document explains core Fulcro concepts used in this project.
+> **Audience**: AI agents and developers new to Fulcro.
 > **Scope**: Core Fulcro features. See FULCRO-RAD.md for RAD extensions.
 
 ---
@@ -23,6 +23,7 @@
 ## What is Fulcro?
 
 **Fulcro** is a full-stack web framework for Clojure/ClojureScript that provides:
+
 - **Normalized graph database** for client state (like Redux + normalizr)
 - **Declarative data fetching** via EQL queries
 - **Component-local queries** that compose into global queries
@@ -33,6 +34,7 @@
 ### Philosophy
 
 Fulcro follows these principles:
+
 1. **Data is immutable** - State changes create new versions
 2. **Queries co-locate with UI** - Components declare what data they need
 3. **Normalization by default** - No duplicate data in app state
@@ -41,12 +43,14 @@ Fulcro follows these principles:
 ### When to Use Fulcro
 
 ✅ **Use Fulcro when**:
+
 - Building SPAs with complex data requirements
 - Need normalized state (avoid data duplication)
 - Want declarative data fetching
 - Need server-side rendering
 
 ❌ **Consider alternatives when**:
+
 - Building simple static sites
 - Don't need normalized state
 - Already heavily invested in another framework
@@ -64,15 +68,16 @@ Fulcro stores app state as a **normalized graph database**. Understanding this i
 ```clojure
 ;; User appears in multiple places:
 {:app/current-user {:user/id 1 :user/name "Alice" :user/email "alice@example.com"}
- :app/messages [{:message/id 1 
+ :app/messages [{:message/id 1
                  :message/text "Hello"
                  :message/author {:user/id 1 :user/name "Alice" :user/email "alice@example.com"}}
                 {:message/id 2
-                 :message/text "World"  
+                 :message/text "World"
                  :message/author {:user/id 1 :user/name "Alice" :user/email "alice@example.com"}}]}
 ```
 
 **Problems**:
+
 - Alice's data duplicated 3 times
 - Update email → must update in 3 places
 - Easy to have inconsistent data
@@ -84,17 +89,17 @@ Fulcro stores app state as a **normalized graph database**. Understanding this i
 
 ```clojure
 {;; Normalized tables (like a database)
- :user/id {1 {:user/id 1 
-              :user/name "Alice" 
+ :user/id {1 {:user/id 1
+              :user/name "Alice"
               :user/email "alice@example.com"}}
- 
- :message/id {1 {:message/id 1 
+
+ :message/id {1 {:message/id 1
                  :message/text "Hello"
                  :message/author [:user/id 1]}    ; ⭐ Ident reference
               2 {:message/id 2
                  :message/text "World"
                  :message/author [:user/id 1]}}   ; ⭐ Same reference
- 
+
  ;; App root points to data via idents
  :app/current-user [:user/id 1]                   ; ⭐ Ident
  :app/messages [[:message/id 1]                   ; ⭐ Ident
@@ -102,6 +107,7 @@ Fulcro stores app state as a **normalized graph database**. Understanding this i
 ```
 
 **Benefits**:
+
 - Alice's data stored **once**
 - Update email → change in **one** place
 - All references automatically see the update
@@ -118,6 +124,7 @@ An **ident** is a tuple `[<entity-type> <entity-id>]` that uniquely identifies a
 ```
 
 **Components**:
+
 1. **Entity type** - Keyword (usually the identity attribute)
 2. **Entity ID** - Unique value (string, int, UUID)
 
@@ -129,11 +136,12 @@ When you define a component with an `:ident`, Fulcro automatically normalizes:
 (defsc User [this props]
   {:query [:user/id :user/name :user/email]
    :ident :user/id}                              ; ⭐ Shorthand for [:user/id (:user/id props)]
-  
+
   (dom/div (:user/name props)))
 ```
 
 **Loading this data**:
+
 ```clojure
 ;; Server returns:
 {:user/id 1 :user/name "Alice" :user/email "alice@example.com"}
@@ -145,12 +153,14 @@ When you define a component with an `:ident`, Fulcro automatically normalizes:
 ### Ident Forms
 
 #### Keyword Shorthand (Recommended)
+
 ```clojure
 :ident :user/id
 ;; Equivalent to: [:user/id (:user/id props)]
 ```
 
 #### Function Form (Advanced)
+
 ```clojure
 :ident (fn [this props] [:user/id (:user/id props)])
 ```
@@ -166,6 +176,7 @@ When you define a component with an `:ident`, Fulcro automatically normalizes:
 ### Basic Query Syntax
 
 #### Simple Properties
+
 ```clojure
 [:user/id :user/name :user/email]
 ```
@@ -173,8 +184,9 @@ When you define a component with an `:ident`, Fulcro automatically normalizes:
 Fetches three properties of a user.
 
 #### Joins (Nested Data)
+
 ```clojure
-[:user/id 
+[:user/id
  :user/name
  {:user/messages [:message/id :message/text]}]  ; ⭐ Join to messages
 ```
@@ -182,6 +194,7 @@ Fetches three properties of a user.
 Fetches user with nested messages.
 
 #### Parameterized Queries
+
 ```clojure
 [(:users/search {:search-term "alice"})]         ; ⭐ Pass parameters
 ```
@@ -189,6 +202,7 @@ Fetches user with nested messages.
 Pass parameters to resolvers.
 
 #### Ident Queries (Lookup by ID)
+
 ```clojure
 [{[:user/id 1] [:user/name :user/email]}]        ; ⭐ Fetch specific user
 ```
@@ -210,7 +224,7 @@ Fulcro queries **compose**. Child component queries are automatically included i
 (defsc MessageList [this {:keys [messages]}]
   {:query [{:messages (comp/get-query Message)}] ; ⭐ Include child query
    :ident :list/id}
-  (dom/div 
+  (dom/div
     (map ui-message messages)))
 
 ;; Composed query automatically becomes:
@@ -239,7 +253,7 @@ For **references** (idents), use link queries:
  :person/homeworld {:planet/id "1" :planet/name "Tatooine"}}
 
 ;; Normalized as:
-{:person/id {"1" {:person/id "1" 
+{:person/id {"1" {:person/id "1"
                   :person/name "Luke"
                   :person/homeworld [:planet/id "1"]}}  ; ⭐ Ident reference
  :planet/id {"1" {:planet/id "1" :planet/name "Tatooine"}}}
@@ -259,11 +273,12 @@ Fulcro has different component types for different use cases.
 (defsc Banner [this {:keys [message]}]
   {:query [:banner/message]
    :ident :banner/id}
-  
+
   (dom/div :.banner message))
 ```
 
-**When to use**: 
+**When to use**:
+
 - Custom layouts
 - Stateless presentations
 - Non-CRUD UI
@@ -277,12 +292,13 @@ Fulcro has different component types for different use cases.
   {fo/id person_id
    fo/attributes [person_id person_name]
    fo/route-prefix "person"}
-  
+
   ;; RAD auto-generates form UI
   )
 ```
 
 **When to use**:
+
 - Creating/editing entities
 - Need validation
 - Need save/cancel
@@ -299,12 +315,13 @@ See FULCRO-RAD.md for details.
   {ro/source-attribute all-people
    ro/columns [:person/name :person/height]
    ro/row-pk :person/id}
-  
+
   ;; RAD auto-generates table UI
   )
 ```
 
 **When to use**:
+
 - Showing lists of data
 - Need filtering/sorting/pagination
 - CRUD list views
@@ -313,12 +330,12 @@ See FULCRO-RAD.md for details.
 
 ### Decision Matrix
 
-| Need | Use |
-|------|-----|
-| Custom UI | `defsc` |
-| Edit single entity | `defsc-form` |
+| Need                  | Use            |
+| --------------------- | -------------- |
+| Custom UI             | `defsc`        |
+| Edit single entity    | `defsc-form`   |
 | Show list of entities | `defsc-report` |
-| Simple presentation | `defsc` |
+| Simple presentation   | `defsc`        |
 
 ---
 
@@ -339,14 +356,14 @@ Fulcro's state is an **atom** containing a normalized map.
 {;; Normalized entity tables
  :user/id {1 {:user/id 1 :user/name "Alice"}}
  :message/id {1 {:message/id 1 :message/text "Hello"}}
- 
+
  ;; Root data (what UI sees initially)
  :root/current-user [:user/id 1]
  :root/messages [[:message/id 1]]
- 
+
  ;; Component-local state
  ::some-component {[:component/id "x"] {:ui/expanded? true}}
- 
+
  ;; UI state machines (RAD forms/reports)
  :com.fulcrologic.fulcro.ui-state-machines/asm-id {...}}
 ```
@@ -354,6 +371,7 @@ Fulcro's state is an **atom** containing a normalized map.
 ### Reading State
 
 #### In Components (Preferred)
+
 ```clojure
 (defsc User [this {:user/keys [name email]}]  ; ⭐ Props from query
   {:query [:user/name :user/email]}
@@ -361,6 +379,7 @@ Fulcro's state is an **atom** containing a normalized map.
 ```
 
 #### Directly from State Atom (Rare)
+
 ```clojure
 ;; In REPL or advanced cases
 (let [state @(::app/state-atom @SPA)
@@ -371,6 +390,7 @@ Fulcro's state is an **atom** containing a normalized map.
 ### Updating State
 
 #### Via Mutations (Preferred)
+
 ```clojure
 (defmutation update-user-name [{:user/keys [id name]}]
   (action [{:keys [state]}]
@@ -381,9 +401,10 @@ Fulcro's state is an **atom** containing a normalized map.
 ```
 
 #### Directly (Rare)
+
 ```clojure
 ;; Only in REPL or tests
-(swap! (::app/state-atom @SPA) 
+(swap! (::app/state-atom @SPA)
   assoc-in [:user/id 1 :user/name] "Bob")
 ```
 
@@ -399,7 +420,7 @@ Fulcro's state is an **atom** containing a normalized map.
 (defmutation update-email [{:user/keys [id email]}]
   (action [{:keys [state]}]                      ; ⭐ Local state update
     (swap! state assoc-in [:user/id id :user/email] email))
-  
+
   (remote [env]                                  ; ⭐ Optional: send to server
     true))
 ```
@@ -408,8 +429,8 @@ Fulcro's state is an **atom** containing a normalized map.
 
 ```clojure
 ;; In a component:
-(dom/button 
-  {:onClick #(comp/transact! this 
+(dom/button
+  {:onClick #(comp/transact! this
                [(update-email {:user/id 1 :email "newemail@example.com"})])}
   "Update Email")
 ```
@@ -423,12 +444,12 @@ Mutations run **optimistically** (update UI immediately):
   (action [{:keys [state]}]
     ;; Update UI immediately
     (swap! state assoc-in [:user/id 1 :ui/saving?] true))
-  
+
   (remote [env] true)                            ; Send to server
-  
+
   (ok-action [env]                               ; ⭐ On success
     (swap! (:state env) assoc-in [:user/id 1 :ui/saving?] false))
-  
+
   (error-action [env]                            ; ⭐ On error
     (swap! (:state env) assoc-in [:user/id 1 :ui/saving?] false)
     ;; Fulcro auto-rolls back the optimistic update
@@ -463,17 +484,17 @@ Unmount
 (defsc User [this props]
   {:query [:user/id :user/name]
    :ident :user/id
-   
+
    ;; Called once when component mounts
    :componentDidMount
    (fn [this]
      (comp/transact! this [(load-user-data)]))
-   
-   ;; Called before component unmounts  
+
+   ;; Called before component unmounts
    :componentWillUnmount
    (fn [this]
      (cleanup-resources))}
-  
+
   (dom/div (:user/name props)))
 ```
 
@@ -497,17 +518,17 @@ Unmount
   {:query [{:people (comp/get-query PersonDetail)}
            {:selected-person (comp/get-query PersonDetail)}]
    :ident :list/id}
-  
+
   (dom/div
     ;; List
     (dom/ul
       (map (fn [person]
-             (dom/li 
-               {:onClick #(comp/transact! this 
+             (dom/li
+               {:onClick #(comp/transact! this
                             [(select-person {:person/id (:person/id person)})])}
                (:person/name person)))
            people))
-    
+
     ;; Detail
     (when selected-person
       (ui-person-detail selected-person))))
@@ -521,13 +542,13 @@ Unmount
 (defsc PersonDetail [this props]
   {:query [:person/id :person/name :ui/loaded?]
    :ident :person/id
-   
+
    :componentDidMount
    (fn [this]
      (when-not (:ui/loaded? (comp/props this))
        (df/load! this [:person/id (:person/id (comp/props this))]
                  PersonDetail)))}
-  
+
   (if (:ui/loaded? props)
     (dom/div (:person/name props))
     (dom/div "Loading...")))
@@ -541,14 +562,14 @@ Unmount
 (defsc Accordion [this {:keys [ui/expanded?]}]
   {:query [:ui/expanded?]                        ; ⭐ ui/ namespace = local state
    :ident :accordion/id
-   
+
    :initial-state {:ui/expanded? false}}         ; ⭐ Initial value
-  
+
   (dom/div
-    (dom/button 
+    (dom/button
       {:onClick #(m/toggle! this :ui/expanded?)} ; ⭐ Built-in toggle
       "Toggle")
-    
+
     (when expanded?
       (dom/div "Content"))))
 ```
@@ -562,6 +583,7 @@ Unmount
 **Problem**: Component queries data but it's not normalized.
 
 **Solution**: Add `:ident` to component:
+
 ```clojure
 (defsc Person [this props]
   {:query [:person/id :person/name]
@@ -574,10 +596,11 @@ Unmount
 **Problem**: Component renders before data is loaded.
 
 **Solution**: Add nil check:
+
 ```clojure
 (defsc Person [this {:person/keys [name]}]
   {:query [:person/name]}
-  
+
   (if name                                       ; ⭐ Check for data
     (dom/div name)
     (dom/div "Loading...")))
@@ -588,11 +611,13 @@ Unmount
 **Problem**: Using function form for ident incorrectly.
 
 **Wrong**:
+
 ```clojure
 :ident (fn [] [:person/id (:person/id props)])   ; ❌ props not available
 ```
 
 **Right**:
+
 ```clojure
 :ident :person/id                                ; ✅ Use shorthand
 ```
@@ -602,16 +627,18 @@ Unmount
 **Problem**: State changes but UI doesn't re-render.
 
 **Common Causes**:
+
 1. **Mutating state directly** instead of using mutations
 2. **Not refreshing** after mutation
 3. **Query doesn't include** the changed attribute
 
 **Solution**:
+
 ```clojure
 (defmutation update-name [params]
   (action [{:keys [state]}]
     (swap! state ...))
-  
+
   (refresh [env]                                 ; ⭐ Tell Fulcro what to refresh
     [:person/name]))
 ```
@@ -631,5 +658,4 @@ Unmount
 
 - [Fulcro Developers Guide](https://book.fulcrologic.com/)
 - [EQL Specification](https://edn-query-language.org/)
-- [Fulcro Video Tutorials](https://www.youtube.com/channel/UCvb9TaCO7n6jCqvCr6wAXKg)
 - [Fulcro Community](https://clojurians.slack.com) (#fulcro channel)
