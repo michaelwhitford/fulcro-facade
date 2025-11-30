@@ -20,6 +20,7 @@
    [us.whitford.facade.model.account :as m.account]
    [us.whitford.facade.model.entity :as m.entity]
    [us.whitford.facade.model.hpapi :as m.hpapi]
+   [us.whitford.facade.model.ipapi :as m.ipapi]
    [us.whitford.facade.model.swapi :as m.swapi]
    [us.whitford.fulcro-radar.api :as radar]))
 
@@ -55,6 +56,7 @@
   [m.account/resolvers
    m.entity/resolvers
    m.hpapi/resolvers
+   m.ipapi/resolvers
    m.swapi/resolvers])
 
 (pco/defresolver form-errors-resolver

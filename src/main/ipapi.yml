@@ -1,0 +1,143 @@
+---
+openapi: 3.0.0
+info:
+  title: IP API
+  description: IP geolocation API spec for ip-api.com
+  version: "0.1"
+
+servers:
+  - url: http://ip-api.com
+    description: "IP Geolocation API server"
+
+components:
+  schemas:
+    IpInfo:
+      type: object
+      required:
+        - query
+      properties:
+        status:
+          type: string
+          description: Query status (success or fail)
+        message:
+          type: string
+          description: Error message (only on failure)
+        continent:
+          type: string
+          description: Continent name
+        continentCode:
+          type: string
+          description: Two-letter continent code
+        country:
+          type: string
+          description: Country name
+        countryCode:
+          type: string
+          description: Two-letter country code ISO 3166-1 alpha-2
+        region:
+          type: string
+          description: Region/state short code
+        regionName:
+          type: string
+          description: Region/state full name
+        city:
+          type: string
+          description: City name
+        district:
+          type: string
+          description: District (subdivision of city)
+        zip:
+          type: string
+          description: Zip code
+        lat:
+          type: number
+          format: float
+          description: Latitude
+        lon:
+          type: number
+          format: float
+          description: Longitude
+        timezone:
+          type: string
+          description: Timezone (tz)
+        offset:
+          type: integer
+          description: Timezone UTC DST offset in seconds
+        currency:
+          type: string
+          description: National currency
+        isp:
+          type: string
+          description: ISP name
+        org:
+          type: string
+          description: Organization name
+        as:
+          type: string
+          description: AS number and organization, separated by space
+        asname:
+          type: string
+          description: AS name (RIR)
+        reverse:
+          type: string
+          description: Reverse DNS of the IP
+        mobile:
+          type: boolean
+          description: Mobile (cellular) connection
+        proxy:
+          type: boolean
+          description: Proxy, VPN or Tor exit address
+        hosting:
+          type: boolean
+          description: Hosting, colocated or data center
+        query:
+          type: string
+          description: IP used for the query
+
+  responses:
+    404Error:
+      description: Invalid IP address or endpoint not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+
+paths:
+  /json/{ip}:
+    get:
+      summary: Get geolocation information for an IP address
+      operationId: ip-lookup
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          description: "IPv4 or IPv6 address to lookup"
+          schema:
+            type: string
+          example: "24.48.0.1"
+        - name: fields
+          in: query
+          required: false
+          description: "Comma-separated list of fields to return (e.g., 'status,country,city,lat,lon')"
+          schema:
+            type: string
+        - name: lang
+          in: query
+          required: false
+          description: "Localized city, regionName and country (e.g., 'en', 'de', 'es', 'fr', 'ja', 'pt-BR', 'ru', 'zh-CN')"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: IP Geolocation Information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IpInfo"
+        "404":
+          $ref: "#/components/responses/404Error"

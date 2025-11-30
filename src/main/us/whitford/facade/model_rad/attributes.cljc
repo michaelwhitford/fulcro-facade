@@ -10,6 +10,7 @@
     [us.whitford.facade.model-rad.entity :as m.entity]
     [us.whitford.facade.model-rad.file :as m.file]
     [us.whitford.facade.model-rad.hpapi :as m.hpapi]
+    [us.whitford.facade.model-rad.ipapi :as m.ipapi]
     [us.whitford.facade.model-rad.swapi :as m.swapi]))
 
 (def all-attributes (into []
@@ -18,6 +19,7 @@
                         m.entity/attributes
                         m.file/attributes
                         m.hpapi/attributes
+                        m.ipapi/attributes
                         m.swapi/attributes)))
 
 (def key->attribute (attr/attribute-map all-attributes))

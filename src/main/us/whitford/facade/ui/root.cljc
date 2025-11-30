@@ -23,6 +23,7 @@
     [us.whitford.facade.ui.account-forms :refer [AccountForm AccountList]]
     [us.whitford.facade.ui.hpapi-forms :refer [CharacterList CharacterForm
                                                SpellList SpellForm]]
+    [us.whitford.facade.ui.ipapi-forms :refer [IpLookupList IpInfoForm IpLookupWidget]]
     [us.whitford.facade.ui.search-forms :refer [Search ui-search SearchReport]]
     [us.whitford.facade.ui.swapi-forms :refer [PersonList PersonForm Person
                                                FilmList FilmForm
@@ -44,7 +45,8 @@
 ;; This will just be a normal router...but there can be many of them.
 (defrouter MainRouter [this {:keys [current-state route-factory route-props]}]
   {:always-render-body? true
-   :router-targets      [LandingPage AccountList AccountForm PersonList PersonForm Person Search]}
+   :router-targets      [LandingPage AccountList AccountForm PersonList PersonForm Person
+                         IpLookupWidget IpLookupList IpInfoForm Search]}
   ;; Normal Fulcro code to show a loader on slow route change (assuming Semantic UI here, should
   ;; be generalized for RAD so UI-specific code isn't necessary)
   (dom/div
@@ -122,6 +124,12 @@
                          (dom/i :.compact.ui.left.floated.user.icon " Characters"))
                        (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `SpellList {}))}
                          (dom/i :.compact.ui.left.floated.magic.icon " Spells"))))
+                   (ui-dropdown {:className "item" :text "IP Geolocation"}
+                     (ui-dropdown-menu {}
+                       (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `IpLookupWidget {}))}
+                         (dom/i :.compact.ui.left.floated.search.icon " Lookup IP"))
+                       (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `IpLookupList {}))}
+                         (dom/i :.compact.ui.left.floated.list.icon " Lookup History"))))
                    (dom/div :.ui.right.menu
                      #_(dom/div :.ui.small.loader {:classes [(when busy? "active")]})
                      (dom/div :.ui.item
