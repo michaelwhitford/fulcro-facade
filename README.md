@@ -120,11 +120,15 @@ These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step proces
 
 ## Documentation for AI Agents
 
+> **AI agents start here → `AGENTS.md`**
+>
+> The REPL is your primary tool. Use it to discover what exists at runtime—don't read source files to understand the system. AGENTS.md provides the setup and discovery commands.
+
 ### Project Guides (Get Things Done)
 
 | File                   | Purpose                                             |
 | ---------------------- | --------------------------------------------------- |
-| `AGENTS.md`            | **Start here** — Commands, patterns, file locations |
+| `AGENTS.md`            | **Start here** — REPL setup, discovery commands     |
 | `INTEGRATION_GUIDE.md` | Step-by-step for adding new APIs                    |
 | `ARCHITECTURE.md`      | System overview and data flow                       |
 | `QUICK_REFERENCE.md`   | Common patterns and pitfalls                        |

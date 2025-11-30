@@ -1,193 +1,90 @@
-# RADAR.md
+# RADAR - fulcro-radar Library
 
-fulcro-radar provides runtime introspection for Fulcro RAD applications.
+Runtime introspection for Fulcro RAD applications.
+
+## What It Provides
+
+Radar exposes your application's structure via EQL queries—resolvers, entities, forms, reports, relationships—all discoverable at runtime.
 
 ## Setup
-
-Setup parser once per session (auto-discovers namespace via mount):
 
 ```clj
 (require '[us.whitford.fulcro-radar.api :as radar])
 (def p (radar/get-parser))
 ```
 
-## Quick Status
+## Two Main Queries
+
+### `:radar/overview` — System Structure
+
+High-level view of your application:
 
 ```clj
-(-> (p {} [:radar/overview]) :radar/overview :radar/summary)
+(p {} [:radar/overview])
 ```
 
-## Diagnostics
+**Returns:**
 
-**Two separate queries** (don't mix them up):
+| Key | Contents |
+|-----|----------|
+| `:radar/summary` | Counts: `{:resolvers N :entities N :reports N ...}` |
+| `:radar/mount` | Mount states: `{:states ["component-a" "component-b"]}` |
+| `:radar/entities` | Entity info: `[{:name "person" :fields 5 :attributes [...]}]` |
+| `:radar/reports` | Report info: `[{:route "/people" :source :api/all-people :columns [...]}]` |
+| `:radar/forms` | Form info: `[{:route "/person" :id-key :person/id :attributes [...]}]` |
+| `:radar/references` | Entity relationships graph |
 
-Radar keys from `(p {} [:radar/overview])`:
+### `:radar/pathom-env` — Resolver Details
 
-- `:radar/summary` - mount states, attr count, entity/form/report counts
-- `:radar/forms` - name, route, id-key, attributes, query
-- `:radar/reports` - name, route, source resolver, row-pk, columns
-- `:radar/entities` - name, fields, id-key, id-type, attributes (queryable field names)
-- `:radar/references` - from/to/cardinality relationships
-- `:radar/issues` - detected problems (empty = good)
-
-Radar keys from `(p {} [:radar/pathom-env])` *(separate query)*:
-
-- `:resolvers` - `:root` (EQL entry points), `:entity` (by-id), `:derived`
-- `:mutations` - available mutations with params/output
-- `:capabilities` - what's available (parser, datomic, blob-stores)
-- `:counts` - resolver/mutation counts for quick overview
-
-## EQL Query Discovery
-
-**Start with reports** - they contain working query patterns:
+Deep introspection of Pathom resolvers:
 
 ```clj
-;; Get source resolver and columns from existing reports
+(p {} [:radar/pathom-env])
+```
+
+**Returns:**
+
+| Key | Contents |
+|-----|----------|
+| `:resolvers` | Map with `:root`, `:entity`, `:derived` resolver lists |
+| `:mutations` | Available mutations: `[{:name "do-thing" :params [...]}]` |
+| `:indexes` | Raw Pathom indexes (advanced) |
+
+**Resolver shape:**
+```clj
+{:name "person-resolver"
+ :input [:person/id]
+ :output [:person/name :person/height :person/homeworld]}
+```
+
+## Resolver Categories
+
+Radar categorizes resolvers by their input requirements:
+
+| Category | Input | Purpose |
+|----------|-------|---------|
+| `:root` | None | Entry points (collections, globals) |
+| `:entity` | Identity key | Fetch by ID |
+| `:derived` | Non-identity | Computed/transformed data |
+
+## Common Patterns
+
+```clj
+;; Quick status
+(-> (p {} [:radar/overview]) :radar/overview :radar/summary)
+
+;; All root resolvers (entry points)
+(->> (p {} [:radar/pathom-env]) :radar/pathom-env :resolvers :root (map :output))
+
+;; Entity resolver fields
+(->> (p {} [:radar/pathom-env]) :radar/pathom-env :resolvers :entity
+     (filter #(re-find #"person" (:name %))) first :output)
+
+;; Report sources and columns
 (->> (p {} [:radar/overview]) :radar/overview :radar/reports
      (map (juxt :source :columns)))
-;; => Pick a :source and :columns pair, then query:
-
-;; Use report pattern directly - substitute actual :source and :columns from above
-(p {} [{<:source-key> [<:column1> <:column2> ...]}])
 ```
 
-**Note:** Report columns show queryable fields, but the resolver output shape varies by API.
-See "API Output Shapes Vary" below for examples.
+## See Also
 
-**Resolver discovery** (when reports don't cover your use case):
-
-```clj
-;; Root resolvers (EQL entry points)
-(->> (p {} [:radar/pathom-env]) :radar/pathom-env :resolvers :root (map (juxt :name :output)))
-
-;; Entity resolvers (by-id lookups) - shows input/output keys
-(->> (p {} [:radar/pathom-env]) :radar/pathom-env :resolvers :entity (map (juxt :name :input :output)))
-```
-
-## EQL Query Patterns
-
-```clj
-;; Join query - vector-wrapped, use :source/:columns from reports
-(p {} [{<:source-key> [<:column1> <:column2>]}])
-
-;; Entity lookup by ID - use :input/:output from entity resolvers
-(p {} [{[<:id-key> "<actual-id>"] [<:field1> <:field2>]}])
-
-;; Simple key query (no subselection)
-(p {} [<:some-root-key>])
-```
-
-### API Output Shapes Vary
-
-Different APIs return different structures. Check actual output before assuming shape:
-
-```clj
-;; SWAPI - paginated wrapper with :total and :results
-(p {} [{:swapi/all-people [:total {:results [:person/name]}]}])
-;; => {:swapi/all-people {:total 82, :results [{:person/name "Luke"}...]}}
-
-;; HPAPI - flat array (no wrapper)
-(p {} [{:hpapi/all-characters [:character/name :character/house]}])
-;; => {:hpapi/all-characters [{:character/name "Harry Potter"...}...]}
-
-;; IPAPI - single entity collections
-(p {} [{:ipapi/all-ip-lookups [:ip-info/query :ip-info/country]}])
-```
-
-**Tip:** If a query returns empty maps `[{} {} {}...]`, you're using the wrong shape.
-Try querying without nested `:results` wrapper first.
-
-## Client State Inspection
-
-```clj
-;; Get app namespace from radar (in CLJ repl first)
-(-> (p {} [:radar/overview]) :radar/overview :radar/app-ns)
-;; => <app-ns>  (SPA is at <app-ns>.application/SPA)
-```
-
-```cljs
-;; Then in CLJS repl, require and inspect (use app-ns from above)
-;; Note: SPA is an atom wrapping the app, so double-deref is needed
-(require '[com.fulcrologic.fulcro.application :as fulcro-app])
-(require '[<app-ns>.application :as my-app])
-(keys @(::fulcro-app/state-atom @my-app/SPA))
-```
-
-## RAD Report Data Flow
-
-```
-Search component (header)
-    ↓ set-search-term-and-run mutation
-    ↓ uir/route-to! navigates to SearchReport
-    ↓ report/run-report! triggers load
-    
-SearchReport 
-    ↓ ro/load-options adds :search-term to params
-    ↓ uism/load with params
-
-all-entities-resolver (model/entity.cljc)
-    ↓ reads :search-term from query-params
-    ↓ parallel fetch from SWAPI + HP APIs
-    ↓ transforms to unified {:entity/id :entity/name :entity/type}
-    
-SearchReport state machine
-    ↓ :event/loaded triggers filter/sort/paginate
-    ↓ populates :ui/current-rows
-    ↓ renders via SearchResultRow BodyItem
-```
-
-## RAD Report Patterns
-
-### Control Parameter Storage
-
-**Global controls** (`:local? false` or unspecified):
-```clj
-;; Storage path
-[::control/id <control-key> ::control/value]
-
-;; Example
-[:com.fulcrologic.rad.control/id ::search-term :com.fulcrologic.rad.control/value]
-```
-
-**Local controls** (`:local? true`):
-```clj
-;; Storage path
-(conj report-ident :ui/parameters <control-key>)
-```
-
-### Passing Parameters to Resolvers
-
-Use `ro/load-options` to transform control params to resolver params:
-```clj
-ro/load-options (fn [env]
-                  (let [params (report/current-control-parameters env)
-                        search-term (::search-term params)]
-                    {:params (assoc params :search-term search-term)}))
-```
-
-### Triggering Report from External Component
-
-```clj
-(defmutation set-search-term-and-run [{:keys [search-term]}]
-  (action [{:keys [state app]}]
-    ;; 1. Set control value at correct path
-    (swap! state assoc-in [::control/id ::search-term ::control/value] search-term)
-    ;; 2. Trigger report run after state update
-    #?(:cljs (when app
-               (js/setTimeout 
-                 #(report/run-report! app SearchReport)
-                 100)))))
-```
-
-## RAD Component Patterns
-
-### Component Ident
-
-Use keyword shorthand for simple idents:
-```clj
-;; ✅ CORRECT
-:ident :entity/id
-
-;; ❌ WRONG - closure doesn't have access to props during normalization
-:ident (fn [] [:entity/id (:entity/id props)])
-```
+- **AGENTS.md** — Project-specific discovery commands using radar
