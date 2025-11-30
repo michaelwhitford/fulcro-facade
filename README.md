@@ -69,11 +69,12 @@ Step 10 is critical — without registering routes in the statechart, menu click
 
 The repo includes working integrations of varying complexity:
 
-| Integration      | Complexity | Demonstrates                    |
-| ---------------- | ---------- | ------------------------------- |
-| IP Geolocation   | Simple     | Single entity, no relationships |
-| Harry Potter API | Medium     | Multiple entities, filtering    |
-| SWAPI            | Complex    | Relationships, pagination       |
+| Integration | Complexity | Demonstrates |
+|-------------|------------|--------------|
+| IP Geolocation (`ipapi`) | Simple | Single entity, no relationships |
+| Weather (`wttr`) | Simple | Dependent resolver (uses IP location) |
+| Harry Potter API (`hpapi`) | Medium | Multiple entities, filtering |
+| SWAPI (`swapi`) | Complex | Relationships, pagination |
 
 These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step process.
 
