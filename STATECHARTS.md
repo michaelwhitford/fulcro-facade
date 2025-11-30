@@ -666,5 +666,5 @@ Server-side statechart for CLJ↔Browser question/answer flow:
 ## References
 
 - [SCXML W3C Specification](https://www.w3.org/TR/scxml/) - The standard this library implements
-- [fulcro-statecharts Guide](file:///Users/mwhitford/src/statecharts/Guide.adoc) - Full documentation
+- [fulcro-statecharts Guide](https://github.com/fulcrologic/statecharts/blob/main/Guide.adoc) - Full documentation
 - [Statecharts.dev](https://statecharts.dev/) - General statechart concepts
