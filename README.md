@@ -24,6 +24,46 @@ To work with this project, your AI agent needs REPL access via one of these tool
 
 Either tool provides the essential capability: **live REPL evaluation**. This lets the AI agent test code incrementally, inspect runtime state, and verify changes work before committing.
 
+## Quick Start
+
+```bash
+# Install dependencies
+yarn install
+# or
+npm install
+
+# Start shadow-cljs (terminal 1)
+shadow-cljs watch main
+
+# Start REPL (terminal 2)
+clj -A:dev
+```
+
+```clojure
+(require 'development)
+(development/start)
+```
+
+Open http://localhost:3010
+
+### VSCode + Calva
+
+Add to `settings.json` under `calva.replConnectSequences`
+
+```json
+{
+  "name": "fulcro-rad",
+  "projectType": "deps.edn",
+  "cljsType": "shadow-cljs",
+  "afterCLJReplJackInCode": "(require 'development :reload) (in-ns 'development) (start)",
+  "menuSelections": {
+    "cljAliases": ["dev", "cljs", "test"],
+    "cljsLaunchBuilds": [":main"],
+    "cljsDefaultBuild": ":main"
+  }
+}
+```
+
 ## Architecture
 
 ```
@@ -89,46 +129,6 @@ These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step proces
 | `TROUBLESHOOTING.md`   | Error diagnosis and fixes                           |
 
 Supporting concept guides: `FULCRO.md`, `FULCRO-RAD.md`, `PATHOM.md`, `MARTIAN.md`, `RADAR.md`, `STATECHARTS.md`
-
-## Quick Start
-
-```bash
-# Install dependencies
-yarn install
-# or
-npm install
-
-# Start shadow-cljs (terminal 1)
-shadow-cljs watch main
-
-# Start REPL (terminal 2)
-clj -A:dev
-```
-
-```clojure
-(require 'development)
-(development/start)
-```
-
-Open http://localhost:3010
-
-### VSCode + Calva
-
-Add to `settings.json` under `calva.replConnectSequences`
-
-```json
-{
-  "name": "fulcro-rad",
-  "projectType": "deps.edn",
-  "cljsType": "shadow-cljs",
-  "afterCLJReplJackInCode": "(require 'development :reload) (in-ns 'development) (start)",
-  "menuSelections": {
-    "cljAliases": ["dev", "cljs", "test"],
-    "cljsLaunchBuilds": [":main"],
-    "cljsDefaultBuild": ":main"
-  }
-}
-```
 
 ## Development
 

@@ -393,10 +393,12 @@ Common types:
 
 **Command**: `clj-kondo --lint .`
 
-**Expected errors** (intentional):
-- `lib/logging.clj:46-47` - False positive from macro
-- `model/hpapi.cljc` - Intentional unused import
-- `model/swapi.cljc` - Intentional unused import
+**Expected output**: 2 errors, 2 warnings
+
+These are intentional warts left to verify AI agents check lint output correctly:
+- `lib/logging.clj:46-47` - Unresolved `_`, `err` - false positive from taoensso.encore/if-let
+- `model/hpapi.cljc` - Unused UUID import
+- `model/swapi.cljc` - Unused UUID import
 
 **Common fixable errors**:
 1. **Unresolved symbol**

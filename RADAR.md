@@ -19,6 +19,8 @@ Setup parser once per session (auto-discovers namespace via mount):
 
 ## Diagnostics
 
+**Two separate queries** (don't mix them up):
+
 Radar keys from `(p {} [:radar/overview])`:
 
 - `:radar/summary` - mount states, attr count, entity/form/report counts
@@ -28,7 +30,7 @@ Radar keys from `(p {} [:radar/overview])`:
 - `:radar/references` - from/to/cardinality relationships
 - `:radar/issues` - detected problems (empty = good)
 
-Radar keys from `(p {} [:radar/pathom-env])`:
+Radar keys from `(p {} [:radar/pathom-env])` *(separate query)*:
 
 - `:resolvers` - `:root` (EQL entry points), `:entity` (by-id), `:derived`
 - `:mutations` - available mutations with params/output
