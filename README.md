@@ -112,7 +112,7 @@ Open http://localhost:3010
 
 ### VSCode + Calva
 
-Add to `settings.json` under calva.:
+Add to `settings.json` under `calva.replConnectSequences`
 
 ```json
 {

@@ -55,6 +55,18 @@ Files for new API (5 layers):
 
 Also update: config/defaults.edn, model_rad/attributes.cljc, components/parser.clj, ui/root.cljc, client.cljs
 
+## Toasts (CLJS REPL)
+
+Send notifications to the user's browser:
+
+```cljs
+(require '[us.whitford.facade.ui.toast :refer [toast!]])
+(toast! "Hello from the AI agent! 🤖")
+(toast! {:position "bottom-center" :autoClose 3000} "Task complete!")
+```
+
+Options: :position (top-right, bottom-center, etc.), :autoClose (ms)
+
 ## Documentation
 
 - QUICK_REFERENCE.md - Essential patterns and commands
