@@ -1,70 +1,99 @@
-# Fulcro API Client: facade
+# facade
 
-A Fulcro RAD application that serves as a client to multiple API backends. Built as a learning project to explore Fulcro and Fulcro RAD patterns.
+A self-building Fulcro RAD application designed to be extended by AI agents.
 
-## Features
+## What Is This?
 
-- **Universal Search** - Search across Star Wars and Harry Potter universes from a single interface
-- **SWAPI Integration** - People, Films, Planets, Species, Vehicles, Starships ([swapi.dev](https://swapi.dev))
-- **Harry Potter API** - Characters and Spells ([hp-api.onrender.com](https://hp-api.onrender.com))
-- **10 Forms, 10 Reports** - Full RAD-based CRUD with statechart routing
-- **Account Management** - Datomic-backed user accounts with file uploads
-- **Test Suite** - 59 tests with 627 assertions
+This project is a **bootstrapped foundation** for AI-assisted application development. It provides:
 
-## Documentation
+- **AI-ready documentation** - `AGENTS.md` gives AI assistants everything they need to understand and modify the codebase
+- **Integration patterns** - Clear examples showing how to add new API backends
+- **Layered architecture** - Separation of concerns that AI agents can reason about and extend
+- **Working examples** - Real integrations to learn from, not just documentation
 
-| File | Description |
-|------|-------------|
-| `AGENTS.md` | Quick reference for AI assistants and developers |
-| `RADAR.md` | Runtime introspection and EQL query discovery |
-| `ARCHITECTURE.md` | System overview and component structure |
-| `PLAN.md` | Feature documentation and implementation details |
-| `CHANGELOG.md` | Version history |
+The goal: point an AI agent at this repo and say "add support for X API" — and it works.
 
-## Usage
+## AI Agent Requirements
 
-```bash
-# Run tests
-clojure -M:run-tests
+To work with this project, your AI agent needs REPL access via one of these tools:
 
-# Lint
-clj-kondo --lint .
+| Tool                                                              | Description                                                         |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [clojure-mcp](https://github.com/bhauman/clojure-mcp)             | Full-featured MCP server with REPL, file editing, and more          |
+| [clojure-mcp-light](https://github.com/bhauman/clojure-mcp-light) | Lightweight `clj-nrepl-eval` and `clj-paren-repair` tools for NREPL |
 
-# Check for outdated dependencies
-clojure -M:outdated
+Either tool provides the essential capability: **live REPL evaluation**. This lets the AI agent test code incrementally, inspect runtime state, and verify changes work before committing.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      UI Layer                           │
+│              (Fulcro RAD Forms & Reports)               │
+├─────────────────────────────────────────────────────────┤
+│                    RAD Attributes                       │
+│              (Schema + UI hints in one place)           │
+├─────────────────────────────────────────────────────────┤
+│                  Pathom Resolvers                       │
+│              (Data fetching + transformation)           │
+├─────────────────────────────────────────────────────────┤
+│                   Martian Clients                       │
+│              (OpenAPI-driven HTTP clients)              │
+├─────────────────────────────────────────────────────────┤
+│                   OpenAPI Specs                         │
+│              (Contract for external APIs)               │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Building the SPA
+Each layer has a clear responsibility. AI agents can add a new integration by creating 5 files — one per layer.
 
-Compile the CLJS source to run the client:
+## Example Integrations
+
+The repo includes working integrations of varying complexity:
+
+| Integration      | Complexity | Demonstrates                    |
+| ---------------- | ---------- | ------------------------------- |
+| IP Geolocation   | Simple     | Single entity, no relationships |
+| Harry Potter API | Medium     | Multiple entities, filtering    |
+| SWAPI            | Complex    | Relationships, pagination       |
+
+These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step process.
+
+## Documentation for AI Agents
+
+| File                   | Purpose                                             |
+| ---------------------- | --------------------------------------------------- |
+| `AGENTS.md`            | **Start here** — Commands, patterns, file locations |
+| `INTEGRATION_GUIDE.md` | Step-by-step for adding new APIs                    |
+| `ARCHITECTURE.md`      | System overview and data flow                       |
+| `QUICK_REFERENCE.md`   | Common patterns and pitfalls                        |
+| `TROUBLESHOOTING.md`   | Error diagnosis and fixes                           |
+
+Supporting concept guides: `FULCRO.md`, `FULCRO-RAD.md`, `PATHOM.md`, `MARTIAN.md`, `RADAR.md`
+
+## Quick Start
 
 ```bash
-yarn                      # or: npm install
-shadow-cljs watch main    # development with hot reload
-```
+# Install dependencies
+yarn
 
-For production builds:
+# Start shadow-cljs (terminal 1)
+shadow-cljs watch main
 
-```bash
-make release
-```
-
-## Running the Server
-
-The server uses an in-memory Datomic database. Start from the REPL with the `:dev` alias:
-
-```bash
+# Start REPL (terminal 2)
 clj -A:dev
 ```
 
 ```clojure
-user=> (require 'development)
-user=> (development/start)
+(require 'development)
+(development/start)
 ```
 
-## VSCode + Calva
+Open http://localhost:3000
 
-Add this to `.vscode/settings.json` or your Calva connect sequences:
+### VSCode + Calva
+
+Add to `.vscode/settings.json` or Calva connect sequences:
 
 ```json
 {
@@ -80,24 +109,20 @@ Add this to `.vscode/settings.json` or your Calva connect sequences:
 }
 ```
 
-## Development Functions
+## Development
 
-| Function | Description |
-|----------|-------------|
-| `(development/start)` | Cold start the server |
-| `(development/stop)` | Stop the server |
+```bash
+clojure -M:run-tests      # Run tests
+clj-kondo --lint .        # Lint
+clojure -M:outdated       # Check dependencies
+```
+
+| Function                | Description                           |
+| ----------------------- | ------------------------------------- |
+| `(development/start)`   | Cold start the server                 |
+| `(development/stop)`    | Stop the server                       |
 | `(development/restart)` | Stop, refresh all source, and restart |
-| `(development/fast-restart)` | Stop and restart without refreshing |
-
-> **Tip:** Use `restart` when you've modified middleware or closed-over functions. For simple changes, evaluate directly in the REPL.
 
 ## License
 
-The MIT License (MIT)  
-Copyright (c), Michael Whitford
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+MIT License — Copyright (c) Michael Whitford
