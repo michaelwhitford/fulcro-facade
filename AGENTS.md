@@ -1,107 +1,63 @@
 # AGENTS.md
 
-Fulcro RAD application. See `RADAR.md` for runtime introspection and EQL query discovery.
+Fulcro RAD application. Namespace: us.whitford.facade
 
-**Quick Start**: See `QUICK_REFERENCE.md` for essential patterns and commands.
+Use PLAN.md for planning, CHANGELOG.md for changes. Update PLAN.md frequently.
 
-**Planning & Tracking**:
-- Use `PLAN.md` for planning
-- Use `CHANGELOG.md` for changes  
-- Update `PLAN.md` frequently to save progress
+App runs in user's browser and editor. Some issues require user intervention.
 
-The app runs from the user's browser, and the user's editor. Some issues may require user intervention.
+## Commands
 
-## App
+Restart server: (require 'development)(development/restart)
+Run tests: clojure -M:run-tests
+Lint: clj-kondo --lint .
+Check deps: clojure -M:outdated
 
-- **Namespace**: `us.whitford.facade`
-- **SPA (cljs running in browser)**: `us.whitford.facade.application/SPA`
+## Expected Lint Output
 
-## Restart
-
-```clj
-(require 'development)(development/restart)
-```
-
-## Operations
-
-```bash
-clojure -M:run-tests # kaocha tests
-clj-kondo --lint . # clj-kondo lint
-clojure -M:outdated # check dependencies
-```
-
-### Expected Lint Output
-
-The linter will report 2 errors and 2 warnings - these are intentional for AI testing:
-
-| File                    | Issue                        | Reason                                               |
-| ----------------------- | ---------------------------- | ---------------------------------------------------- |
-| `lib/logging.clj:46-47` | Unresolved symbol `_`, `err` | False positive from `taoensso.encore/if-let` macro   |
-| `model/hpapi.cljc`      | Unused import `UUID`         | Intentional - verifies linter detects unused imports |
-| `model/swapi.cljc`      | Unused import `UUID`         | Intentional - verifies linter detects unused imports |
-
-If you see **only** these issues, linting is working correctly.
+2 errors, 2 warnings are intentional:
+- lib/logging.clj:46-47 - Unresolved `_`, `err` - false positive from taoensso.encore/if-let
+- model/hpapi.cljc - Unused UUID import - intentional test
+- model/swapi.cljc - Unused UUID import - intentional test
 
 ## Tests
 
-`.cljc` files with fulcro-spec. `let` bindings outside `assertions` block, use `=>` operator.
+.cljc files with fulcro-spec. let bindings outside assertions block, use => operator.
 
-## Martian Client Exploration
-
-Discover available API operations at runtime:
+## Martian Client
 
 ```clj
 (require '[martian.core :as martian])
 (require '[us.whitford.facade.components.swapi :refer [swapi-martian]])
-
-(martian/explore swapi-martian)           ; list operations
-(martian/explore swapi-martian :people)   ; operation details + params
-@(martian/response-for swapi-martian :person {:id "1"})  ; execute request
+(martian/explore swapi-martian)
+(martian/explore swapi-martian :people)
+@(martian/response-for swapi-martian :person {:id "1"})
 ```
 
-See MARTIAN.md for full documentation.
+## Adding APIs
 
-## Adding New API Integrations
+See INTEGRATION_GUIDE.md. Examples by complexity:
+- ipapi.* - Simple: single entity
+- hpapi.* - Medium: multiple entities, filtering
+- swapi.* - Complex: relationships, pagination
 
-See `INTEGRATION_GUIDE.md` for step-by-step instructions on integrating a new external API.
+Files for new API (5 layers):
+1. src/main/<api>.yml - OpenAPI spec
+2. components/<api>.clj - Martian client
+3. model/<api>.cljc - Resolvers
+4. model_rad/<api>.cljc - RAD attributes
+5. ui/<api>_forms.cljc - UI
 
-**Quick Reference**: Use existing integrations as examples:
-- `swapi.*` - Complex: Multiple entities, relationships, pagination
-- `hpapi.*` - Medium: Multiple entities, filtering  
-- `ipapi.*` - Simple: Single entity, query parameters
+Also update: config/defaults.edn, model_rad/attributes.cljc, components/parser.clj, ui/root.cljc, client.cljs
 
-**Files involved** (5 layers):
-1. `src/main/<api>.yml` - OpenAPI spec
-2. `src/main/us/whitford/facade/components/<api>.clj` - Martian client
-3. `src/main/us/whitford/facade/model/<api>.cljc` - Logic & resolvers
-4. `src/main/us/whitford/facade/model_rad/<api>.cljc` - RAD attributes
-5. `src/main/us/whitford/facade/ui/<api>_forms.cljc` - UI forms
+## Documentation
 
-Plus updates to: `config/defaults.edn`, `model_rad/attributes.cljc`, `components/parser.clj`, `ui/root.cljc`
-
-## Framework Understanding
-
-**New to Fulcro RAD?** Read these framework guides to understand concepts:
-
-| Document | When to Read | Learn |
-| -------- | ------------ | ----- |
-| `FULCRO-RAD.md` | Working with forms/reports | RAD lifecycle, attributes, pickers, form options |
-| `PATHOM.md` | Writing resolvers | Input/output semantics, query planning, error handling |
-| `FULCRO.md` | Understanding app structure | Normalization, idents, queries, state management |
-
-These explain **why** patterns work, not just **how** to use them.
-
-## See Also
-
-### Project Documentation
-
-| Document               | Purpose                                                             |
-| ---------------------- | ------------------------------------------------------------------- |
-| `QUICK_REFERENCE.md`   | Essential patterns, commands, and file locations                    |
-| `INTEGRATION_GUIDE.md` | Step-by-step guide to adding new API integrations                   |
-| `TROUBLESHOOTING.md`   | Common issues and solutions                                         |
-| `RADAR.md`             | Runtime introspection, EQL query discovery, client state inspection |
-| `MARTIAN.md`           | HTTP client exploration, API operations, request/response debugging |
-| `ARCHITECTURE.md`      | System overview, component tables, data flow                        |
-| `PLAN.md`              | Feature documentation and implementation details                    |
-| `CHANGELOG.md`         | Version history, what changed and why                               |
+- QUICK_REFERENCE.md - Essential patterns and commands
+- INTEGRATION_GUIDE.md - Adding new APIs
+- TROUBLESHOOTING.md - Common issues
+- RADAR.md - Runtime introspection, EQL queries
+- MARTIAN.md - HTTP client exploration
+- ARCHITECTURE.md - System overview
+- FULCRO-RAD.md - RAD forms/reports concepts
+- PATHOM.md - Resolver concepts
+- FULCRO.md - App structure, normalization, idents
