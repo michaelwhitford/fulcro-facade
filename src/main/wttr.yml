@@ -1,0 +1,405 @@
+---
+openapi: 3.0.0
+info:
+  title: wttr.in Weather API
+  description: Weather forecast API for wttr.in - console-oriented weather service
+  version: "1.0"
+
+servers:
+  - url: https://wttr.in
+    description: "wttr.in weather service"
+
+components:
+  schemas:
+    WeatherValue:
+      type: object
+      properties:
+        value:
+          type: string
+          description: The value string
+
+    CurrentCondition:
+      type: object
+      properties:
+        FeelsLikeC:
+          type: string
+          description: Feels like temperature in Celsius
+        FeelsLikeF:
+          type: string
+          description: Feels like temperature in Fahrenheit
+        cloudcover:
+          type: string
+          description: Cloud cover percentage
+        humidity:
+          type: string
+          description: Humidity percentage
+        localObsDateTime:
+          type: string
+          description: Local observation date and time
+        observation_time:
+          type: string
+          description: Observation time (UTC)
+        precipInches:
+          type: string
+          description: Precipitation in inches
+        precipMM:
+          type: string
+          description: Precipitation in millimeters
+        pressure:
+          type: string
+          description: Atmospheric pressure in millibars
+        pressureInches:
+          type: string
+          description: Atmospheric pressure in inches
+        temp_C:
+          type: string
+          description: Temperature in Celsius
+        temp_F:
+          type: string
+          description: Temperature in Fahrenheit
+        uvIndex:
+          type: string
+          description: UV index
+        visibility:
+          type: string
+          description: Visibility in kilometers
+        visibilityMiles:
+          type: string
+          description: Visibility in miles
+        weatherCode:
+          type: string
+          description: Weather condition code
+        weatherDesc:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Weather description
+        weatherIconUrl:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Weather icon URL
+        winddir16Point:
+          type: string
+          description: Wind direction (16 point compass)
+        winddirDegree:
+          type: string
+          description: Wind direction in degrees
+        windspeedKmph:
+          type: string
+          description: Wind speed in km/h
+        windspeedMiles:
+          type: string
+          description: Wind speed in mph
+
+    HourlyCondition:
+      type: object
+      properties:
+        DewPointC:
+          type: string
+          description: Dew point in Celsius
+        DewPointF:
+          type: string
+          description: Dew point in Fahrenheit
+        FeelsLikeC:
+          type: string
+          description: Feels like temperature in Celsius
+        FeelsLikeF:
+          type: string
+          description: Feels like temperature in Fahrenheit
+        HeatIndexC:
+          type: string
+          description: Heat index in Celsius
+        HeatIndexF:
+          type: string
+          description: Heat index in Fahrenheit
+        WindChillC:
+          type: string
+          description: Wind chill in Celsius
+        WindChillF:
+          type: string
+          description: Wind chill in Fahrenheit
+        WindGustKmph:
+          type: string
+          description: Wind gust speed in km/h
+        WindGustMiles:
+          type: string
+          description: Wind gust speed in mph
+        chanceoffog:
+          type: string
+          description: Chance of fog percentage
+        chanceoffrost:
+          type: string
+          description: Chance of frost percentage
+        chanceofhightemp:
+          type: string
+          description: Chance of high temperature percentage
+        chanceofovercast:
+          type: string
+          description: Chance of overcast percentage
+        chanceofrain:
+          type: string
+          description: Chance of rain percentage
+        chanceofremdry:
+          type: string
+          description: Chance of remaining dry percentage
+        chanceofsnow:
+          type: string
+          description: Chance of snow percentage
+        chanceofsunshine:
+          type: string
+          description: Chance of sunshine percentage
+        chanceofthunder:
+          type: string
+          description: Chance of thunder percentage
+        chanceofwindy:
+          type: string
+          description: Chance of windy conditions percentage
+        cloudcover:
+          type: string
+          description: Cloud cover percentage
+        humidity:
+          type: string
+          description: Humidity percentage
+        precipInches:
+          type: string
+          description: Precipitation in inches
+        precipMM:
+          type: string
+          description: Precipitation in millimeters
+        pressure:
+          type: string
+          description: Atmospheric pressure in millibars
+        pressureInches:
+          type: string
+          description: Atmospheric pressure in inches
+        tempC:
+          type: string
+          description: Temperature in Celsius
+        tempF:
+          type: string
+          description: Temperature in Fahrenheit
+        time:
+          type: string
+          description: Time of day (e.g. "0", "300", "600" for midnight, 3am, 6am)
+        uvIndex:
+          type: string
+          description: UV index
+        visibility:
+          type: string
+          description: Visibility in kilometers
+        visibilityMiles:
+          type: string
+          description: Visibility in miles
+        weatherCode:
+          type: string
+          description: Weather condition code
+        weatherDesc:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Weather description
+        weatherIconUrl:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Weather icon URL
+        winddir16Point:
+          type: string
+          description: Wind direction (16 point compass)
+        winddirDegree:
+          type: string
+          description: Wind direction in degrees
+        windspeedKmph:
+          type: string
+          description: Wind speed in km/h
+        windspeedMiles:
+          type: string
+          description: Wind speed in mph
+
+    Astronomy:
+      type: object
+      properties:
+        moon_illumination:
+          type: string
+          description: Moon illumination percentage
+        moon_phase:
+          type: string
+          description: Moon phase name
+        moonrise:
+          type: string
+          description: Moonrise time
+        moonset:
+          type: string
+          description: Moonset time
+        sunrise:
+          type: string
+          description: Sunrise time
+        sunset:
+          type: string
+          description: Sunset time
+
+    WeatherDay:
+      type: object
+      properties:
+        astronomy:
+          type: array
+          items:
+            $ref: "#/components/schemas/Astronomy"
+          description: Astronomy data for the day
+        avgtempC:
+          type: string
+          description: Average temperature in Celsius
+        avgtempF:
+          type: string
+          description: Average temperature in Fahrenheit
+        date:
+          type: string
+          description: Date (YYYY-MM-DD format)
+        hourly:
+          type: array
+          items:
+            $ref: "#/components/schemas/HourlyCondition"
+          description: Hourly forecast data
+        maxtempC:
+          type: string
+          description: Maximum temperature in Celsius
+        maxtempF:
+          type: string
+          description: Maximum temperature in Fahrenheit
+        mintempC:
+          type: string
+          description: Minimum temperature in Celsius
+        mintempF:
+          type: string
+          description: Minimum temperature in Fahrenheit
+        sunHour:
+          type: string
+          description: Hours of sun
+        totalSnow_cm:
+          type: string
+          description: Total snowfall in centimeters
+        uvIndex:
+          type: string
+          description: UV index for the day
+
+    AreaName:
+      type: object
+      properties:
+        value:
+          type: string
+          description: Area name
+
+    NearestArea:
+      type: object
+      properties:
+        areaName:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Area name
+        country:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Country name
+        latitude:
+          type: string
+          description: Latitude
+        longitude:
+          type: string
+          description: Longitude
+        population:
+          type: string
+          description: Population
+        region:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Region name
+        weatherUrl:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherValue"
+          description: Weather URL
+
+    Request:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The query string used
+        type:
+          type: string
+          description: Type of query (e.g. "City")
+
+    WeatherForecast:
+      type: object
+      properties:
+        current_condition:
+          type: array
+          items:
+            $ref: "#/components/schemas/CurrentCondition"
+          description: Current weather conditions
+        nearest_area:
+          type: array
+          items:
+            $ref: "#/components/schemas/NearestArea"
+          description: Nearest area information
+        request:
+          type: array
+          items:
+            $ref: "#/components/schemas/Request"
+          description: Request information
+        weather:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherDay"
+          description: Weather forecast by day
+
+paths:
+  /{location}:
+    get:
+      summary: Get weather forecast for a location
+      operationId: forecast
+      parameters:
+        - name: location
+          in: path
+          required: true
+          description: "Location name, airport code, coordinates, or area code"
+          schema:
+            type: string
+          example: "London"
+        - name: format
+          in: query
+          required: true
+          description: "Output format (use j1 for JSON)"
+          schema:
+            type: string
+            enum: ["j1"]
+          example: "j1"
+        - name: m
+          in: query
+          required: false
+          description: "Use metric units (SI)"
+          schema:
+            type: string
+        - name: u
+          in: query
+          required: false
+          description: "Use USCS units"
+          schema:
+            type: string
+        - name: lang
+          in: query
+          required: false
+          description: "Language code (e.g., 'en', 'de', 'fr')"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Weather forecast data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeatherForecast"

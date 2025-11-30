@@ -22,6 +22,7 @@
    [us.whitford.facade.model.hpapi :as m.hpapi]
    [us.whitford.facade.model.ipapi :as m.ipapi]
    [us.whitford.facade.model.swapi :as m.swapi]
+   [us.whitford.facade.model.wttr :as m.wttr]
    [us.whitford.fulcro-radar.api :as radar]))
 
 (defn normalize-query-params
@@ -57,7 +58,8 @@
    m.entity/resolvers
    m.hpapi/resolvers
    m.ipapi/resolvers
-   m.swapi/resolvers])
+   m.swapi/resolvers
+   m.wttr/resolvers])
 
 (pco/defresolver form-errors-resolver
   "Provides a default empty vector for ::form/errors when not otherwise provided.

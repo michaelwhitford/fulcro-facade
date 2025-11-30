@@ -80,4 +80,7 @@
                                               :server-url "https://hp-api.onrender.com/api"}
 
  :us.whitford.facade.components.ipapi/config {:swagger-file "ipapi.yml"
-                                              :server-url "http://ip-api.com"}}
+                                              :server-url "http://ip-api.com"}
+
+ :us.whitford.facade.components.wttr/config {:swagger-file "wttr.yml"
+                                             :server-url "https://wttr.in"}}

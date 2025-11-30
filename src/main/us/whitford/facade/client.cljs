@@ -30,6 +30,7 @@
     [us.whitford.facade.ui.hpapi-forms :refer [CharacterForm CharacterList
                                                SpellForm SpellList]]
     [us.whitford.facade.ui.ipapi-forms :refer [IpLookupWidget IpLookupList IpInfoForm]]
+    [us.whitford.facade.ui.wttr-forms :refer [WeatherLookupWidget WeatherForm]]
     [us.whitford.facade.ui.root :refer [LandingPage Root]]
     [us.whitford.facade.ui.search-forms :refer [SearchReport]]
     [us.whitford.facade.ui.swapi-forms :refer [PersonForm PersonList Person
@@ -106,6 +107,11 @@
                             :route/path   ["ip-lookups"]})
           (ri/form-state {:route/target `IpInfoForm
                           :route/path    ["ip-info"]})
+          ;; Weather (wttr.in)
+          (uir/rstate {:route/target `WeatherLookupWidget
+                       :route/path   ["weather-lookup"]})
+          (ri/form-state {:route/target `WeatherForm
+                          :route/path    ["weather"]})
           )))))
 
 (defonce app (-> (rad-app/fulcro-rad-app

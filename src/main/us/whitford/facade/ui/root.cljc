@@ -24,6 +24,7 @@
     [us.whitford.facade.ui.hpapi-forms :refer [CharacterList CharacterForm
                                                SpellList SpellForm]]
     [us.whitford.facade.ui.ipapi-forms :refer [IpLookupList IpInfoForm IpLookupWidget]]
+    [us.whitford.facade.ui.wttr-forms :refer [WeatherLookupWidget WeatherForm]]
     [us.whitford.facade.ui.search-forms :refer [Search ui-search SearchReport]]
     [us.whitford.facade.ui.swapi-forms :refer [PersonList PersonForm Person
                                                FilmList FilmForm
@@ -118,6 +119,10 @@
                          (dom/i :.compact.ui.left.floated.search.icon " Lookup IP"))
                        (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `IpLookupList {}))}
                          (dom/i :.compact.ui.left.floated.list.icon " Lookup History"))))
+                   (ui-dropdown {:className "item" :text "Weather"}
+                     (ui-dropdown-menu {}
+                       (ui-dropdown-item {:onClick (fn [] (uir/route-to! this `WeatherLookupWidget {}))}
+                         (dom/i :.compact.ui.left.floated.cloud.icon " Get Forecast"))))
                    (dom/div :.ui.right.menu
                      #_(dom/div :.ui.small.loader {:classes [(when busy? "active")]})
                      (dom/div :.ui.item

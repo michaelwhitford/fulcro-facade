@@ -113,6 +113,82 @@ If still not working:
 
 ## UI/Frontend Issues
 
+### Debugging Fulcro App State from CLJS REPL
+
+When UI components show blank data despite backend queries working, the issue is usually 
+with normalization/denormalization. Here's how to debug:
+
+**1. Connect to CLJS REPL**
+```clojure
+;; From shadow-cljs REPL, elevate to browser context
+(shadow/repl :main)
+```
+
+**2. Inspect Raw App State**
+```clojure
+(require '[com.fulcrologic.fulcro.application :as app])
+(require '[us.whitford.facade.application :refer [SPA]])
+
+;; Get current state atom
+(def state (app/current-state @SPA))
+
+;; Check component's state in the normalized db
+(get-in state [:component/id :my.ns/MyComponent])
+;; => {:some-key "value", :result [:thing/id "123"]}
+;;                                 ^^^^^^^^^^^^^^^ This is an ident!
+```
+
+**3. Check Data at Ident**
+
+If you see an ident like `[:thing/id "123"]`, the data is normalized. Check what's stored there:
+```clojure
+(get-in state [:thing/id "123"])
+;; => {:thing/id "123" :thing/name "Widget" :thing/items [[:item/id "a"] [:item/id "b"]]}
+```
+
+**4. Simulate What Fulcro Passes to Component**
+
+Use `db->tree` to see the denormalized data the component actually receives as props:
+```clojure
+(require '[com.fulcrologic.fulcro.algorithms.denormalize :as fdn])
+(require '[com.fulcrologic.fulcro.components :as comp])
+(require '[my.ns :as my])
+
+;; Get component's query
+(def query (comp/get-query my/MyComponent))
+
+;; Get component's ident
+(def ident [:component/id :my.ns/MyComponent])
+
+;; Denormalize - this is exactly what Fulcro passes as props!
+(fdn/db->tree query (get-in state ident) state)
+;; => {:some-key "value", 
+;;     :result {:thing/id "123" 
+;;              :thing/name "Widget" 
+;;              :thing/items [{:item/id "a" :item/name "Item A"} ...]}}
+```
+
+**5. Common Issue: Plain Key vs Join**
+
+If `:result` shows an ident but the component expects data, the query is wrong:
+
+❌ **Wrong** - plain key doesn't denormalize:
+```clojure
+{:query [:location :result]}  ; :result stays as ident
+```
+
+✅ **Correct** - join denormalizes the data:
+```clojure
+{:query [:location {:result (comp/get-query ResultComponent)}]}
+```
+
+**6. Verify Component Query Structure**
+```clojure
+(comp/get-query my/MyComponent)
+;; Should show joins for nested data:
+;; [:location {:result [:thing/id :thing/name {:thing/items [...]}]}]
+```
+
 ### Form Not Loading Data
 
 **Symptoms**: Form displays but fields are empty

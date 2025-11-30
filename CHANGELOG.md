@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Weather API integration** (wttr.in) with current conditions and 3-day forecast
+  - OpenAPI spec (`wttr.yml`) defining weather forecast endpoint
+  - Martian HTTP client component (`components/wttr.clj`)
+  - Weather resolver with data transformations (`model/wttr.cljc`)
+  - RAD attributes for weather and weather-day entities (`model_rad/wttr.cljc`)
+  - Weather lookup widget with forecast cards (`ui/wttr_forms.cljc`)
+  - "Weather" menu in navigation with "Get Forecast" option
+
+- **"Use My Location" feature** for automatic weather by IP geolocation
+  - Client-side IP detection via ipify.org
+  - Pathom bridge resolver (`weather-from-ip-resolver`) connects IP → location → weather
+  - Single query fetches IP info and weather data automatically:
+    ```clojure
+    [{[:ip-info/id "8.8.8.8"] [:ip-info/city :weather/temp-c :weather/description]}]
+    ```
+
+- **TROUBLESHOOTING.md**: New section on debugging Fulcro app state from CLJS REPL
+  - How to inspect normalized state with `app/current-state`
+  - Using `db->tree` to see denormalized props
+  - Common issue: plain key vs join in component queries
+
 ### Fixed
 - IP Geolocation menu items now load components correctly
   - Added missing route registrations in `client.cljs` statechart configuration

@@ -11,7 +11,8 @@
     [us.whitford.facade.model-rad.file :as m.file]
     [us.whitford.facade.model-rad.hpapi :as m.hpapi]
     [us.whitford.facade.model-rad.ipapi :as m.ipapi]
-    [us.whitford.facade.model-rad.swapi :as m.swapi]))
+    [us.whitford.facade.model-rad.swapi :as m.swapi]
+    [us.whitford.facade.model-rad.wttr :as m.wttr]))
 
 (def all-attributes (into []
                       (concat
@@ -20,7 +21,8 @@
                         m.file/attributes
                         m.hpapi/attributes
                         m.ipapi/attributes
-                        m.swapi/attributes)))
+                        m.swapi/attributes
+                        m.wttr/attributes)))
 
 (def key->attribute (attr/attribute-map all-attributes))
 
