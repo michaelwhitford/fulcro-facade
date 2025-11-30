@@ -9,6 +9,8 @@
 
 #?(:cljs
    (do
+     (declare start-round!)
+     
      (defonce game-state (atom {:round 0
                                 :score 0
                                 :misses 0

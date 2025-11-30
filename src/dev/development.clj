@@ -12,7 +12,8 @@
    [us.whitford.facade.components.swapi :refer [swapi-martian]]
    [us.whitford.facade.components.hpapi :refer [hpapi-martian]]
    [us.whitford.facade.components.statecharts :refer [statecharts]]
-   [us.whitford.facade.model.account :refer [new-account]]))
+   [us.whitford.facade.model.account :refer [new-account]]
+   [us.whitford.facade.model.prompt :refer [prompt-statecharts]]))
 
 ;; Prevent tools-ns from findinga source in other places, such as resources
 (set-refresh-dirs "src/main" "src/dev")
@@ -22,7 +23,8 @@
         env (:env statecharts)]
     (d/pull db '[*] [:account/id (new-uuid 001)]))
   (:server-url swapi-martian)
-  (:server-url hpapi-martian))
+  (:server-url hpapi-martian)
+  prompt-statecharts)
 
 (defn seed! []
   (dt/set-timezone! "America/Phoenix")

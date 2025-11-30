@@ -39,8 +39,7 @@
                                                SpeciesForm SpeciesList
                                                VehicleForm VehicleList
                                                StarshipForm StarshipList]]
-    [us.whitford.facade.ui.toast :as toast]
-    [us.whitford.facade.model.agent-comms :as agent-comms]
+    [us.whitford.facade.ui.toast :as toast :refer [start-polling!]]
     [us.whitford.fulcro-radar.api :as radar]))
 
 (defn setup-RAD [app]
@@ -172,6 +171,9 @@
     (log/info "Navigation complete, setting application ready...")
     (comp/transact! app [(application-ready {})])
     (log/info "Application ready transaction submitted")
+    ;; Start polling for CLJ prompt questions (every 5 seconds)
+    (start-polling! {:interval-ms 5000})
+    (log/info "Prompt question polling started")
     (catch :default e
       (log/error "Error during routing initialization:" e)
       ;; Still mark as ready so user can see something rather than infinite loading

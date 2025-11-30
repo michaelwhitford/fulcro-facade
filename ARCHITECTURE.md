@@ -8,11 +8,12 @@ Facade is a Fulcro RAD application that serves as a client to multiple backend A
 
 | Component | Count |
 |-----------|-------|
-| Mount States | 11 |
-| RAD Attributes | 94 |
-| Forms | 10 |
-| Reports | 10 |
-| Entity Types | 12 |
+| Mount States | 15 |
+| RAD Attributes | 163 |
+| Forms | 12 |
+| Reports | 11 |
+| Entity Types | 16 |
+| References | 15 |
 
 Run `(-> (p {} [:radar/overview]) :radar/overview :radar/summary)` for current counts.
 

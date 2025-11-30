@@ -88,7 +88,7 @@ These serve as templates. See `INTEGRATION_GUIDE.md` for the step-by-step proces
 | `QUICK_REFERENCE.md`   | Common patterns and pitfalls                        |
 | `TROUBLESHOOTING.md`   | Error diagnosis and fixes                           |
 
-Supporting concept guides: `FULCRO.md`, `FULCRO-RAD.md`, `PATHOM.md`, `MARTIAN.md`, `RADAR.md`
+Supporting concept guides: `FULCRO.md`, `FULCRO-RAD.md`, `PATHOM.md`, `MARTIAN.md`, `RADAR.md`, `STATECHARTS.md`
 
 ## Quick Start
 

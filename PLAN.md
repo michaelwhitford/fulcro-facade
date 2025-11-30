@@ -4,6 +4,109 @@ Active and completed feature plans.
 
 ---
 
+# Statechart-based Prompt System
+
+## Overview
+
+Replace the crude inbox-based communication with explicit state management via fulcro-statecharts.
+
+## Status: ✅ COMPLETE
+
+### Why Statecharts?
+
+The original inbox approach (`agent-comms.cljc`) required:
+- Manual polling from CLJ REPL
+- No state tracking (is question pending? answered? timed out?)
+- No timeout support
+- Potential for race conditions
+
+The statechart approach provides:
+- Explicit states: `:ask/idle`, `:ask/pending`, `:ask/completed`, `:ask/timeout`
+- Built-in timeout support (default 60s)
+- Clean request/response correlation via session-id
+- Observable state for debugging
+
+### Architecture
+
+```
+CLJ REPL                    Browser
+   |                           |
+   | (prompt/ask! "Deploy?")   |
+   |                           |
+   v                           |
+[Statechart: :ask/pending]     |
+   |                           |
+   | <-- poll every 5s --------|
+   |                           |
+   |---- question found -----> |
+   |                           v
+   |                    [Toast shown]
+   |                           |
+   |                    [User clicks Yes]
+   |                           |
+   | <-- answer-question ------|
+   v                           |
+[Statechart: :ask/completed]   |
+   |                           |
+   | (prompt/get-result q)     |
+   | => {:status :completed    |
+   |     :answer true}         |
+```
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `model/prompt.cljc` | Statechart definition, ask!/get-result API |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `ui/toast.cljc` | Added `ask-statechart!`, polling functions |
+| `client.cljs` | Start polling on app init |
+| `components/parser.clj` | Register prompt resolvers |
+| `development.clj` | Import prompt-statecharts mount state |
+
+### Usage
+
+**From CLJ REPL:**
+```clj
+(require '[us.whitford.facade.model.prompt :as prompt])
+
+;; Ask a question (returns immediately)
+(def q (prompt/ask! "Deploy to production?"))
+;; => {:session-id :prompt/abc123 :status :awaiting-response}
+
+;; Poll for result
+(prompt/get-result q)
+;; => {:status :completed :answer true}
+;; or {:status :awaiting-response}
+;; or {:status :timeout}
+```
+
+### Phases
+
+- [x] Phase 1: Create statechart definition
+- [x] Phase 2: CLJ API (ask!, get-result, pending-questions)
+- [x] Phase 3: Pathom resolver for pending questions
+- [x] Phase 4: Browser polling + toast integration
+- [x] Phase 5: Test end-to-end (fixed session-id serialization bug)
+- [x] Phase 6: Update AGENTS.md documentation
+- [x] Phase 7: Rename from `agent` to `prompt` for clarity
+
+### Bug Fixed
+
+**Issue:** Session ID was being truncated when sent to browser.
+
+- `pending-questions-resolver` used `(name session-id)` which stripped the namespace
+- `:prompt/abc123` became `"abc123"` instead of `"prompt/abc123"`
+- When answer came back, it was keyed under `:abc123` instead of `:prompt/abc123`
+
+**Fix:** Changed to `(subs (str session-id) 1)` to preserve the full qualified keyword as a string.
+
+---
+
 # Weather API Integration (wttr.in)
 
 ## Overview

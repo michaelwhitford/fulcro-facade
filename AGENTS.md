@@ -80,7 +80,38 @@ Then read the answer in CLJ:
 ;; => {:message "ANSWER", :data {:question "..." :answer true}, ...}
 ```
 
-## Agent Communication (Browser → CLJ)
+## Prompt - Statechart Approach (CLJ → Browser → CLJ)
+
+**Recommended approach using statecharts for yes/no questions:**
+
+```clj
+(require '[us.whitford.facade.model.prompt :as prompt])
+
+;; Ask a question (returns immediately)
+(def q (prompt/ask! "Deploy to production?"))
+;; => {:session-id :prompt/abc123 :status :awaiting-response}
+
+;; Poll for result
+(prompt/get-result q)
+;; => {:status :awaiting-response}  ; still waiting
+;; => {:status :completed :answer true}  ; user clicked Yes
+;; => {:status :timeout}  ; 60s elapsed with no response
+
+;; See all pending questions
+(prompt/pending-questions)
+```
+
+The browser automatically polls for questions every 5 seconds and shows toasts.
+When user clicks Yes/No, the answer is sent back to CLJ and the statechart
+transitions to `:ask/completed` or `:ask/timeout`.
+
+**Benefits over inbox approach:**
+- Explicit states: `:ask/idle`, `:ask/pending`, `:ask/completed`, `:ask/timeout`
+- Built-in timeout support (default 60s, configurable)
+- No manual inbox clearing needed
+- Clean request/response correlation via session-id
+
+## Legacy Agent Communication (Browser → CLJ)
 
 Send messages from browser back to CLJ REPL:
 
@@ -100,39 +131,45 @@ Read messages in CLJ:
 
 Example: See `ui/game.cljc` (Whack-a-Toast!) for toast callbacks sending game results to server.
 
-## AI Agent Workflow: Asking User Questions
+## AI Workflow: Asking User Questions (Recommended)
 
-When you need user confirmation or input, follow this pattern:
+Use the statechart-based prompt approach for confirmation questions:
 
-**Step 1: Clear inbox and note message count (CLJ)**
 ```clj
-(require '[us.whitford.facade.model.agent-comms :refer [inbox]])
-(reset! inbox [])
+(require '[us.whitford.facade.model.prompt :as prompt])
+
+;; Step 1: Ask the question
+(def q (prompt/ask! "Should I proceed with this refactoring?"))
+
+;; Step 2: Poll for result (the browser shows toast automatically)
+(prompt/get-result q)
+;; => {:status :awaiting-response}  ; keep polling
+;; => {:status :completed :answer true}  ; user answered!
+
+;; Step 3: Act on response
+(let [{:keys [status answer]} (prompt/get-result q)]
+  (case status
+    :completed (if answer
+                 (println "User said YES - proceeding...")
+                 (println "User said NO - aborting..."))
+    :timeout   (println "User didn't respond in time")
+    :awaiting-response (println "Still waiting...")))
 ```
 
-**Step 2: Send question to browser (CLJS)**
+### Legacy Approach (CLJS REPL)
+
+If you need to ask from CLJS directly:
+
 ```cljs
 (require '[us.whitford.facade.ui.toast :refer [ask!]])
 (ask! "Should I proceed with this refactoring?")
 ```
 
-**Step 3: Poll for answer (CLJ)**
+Then read from CLJ:
 ```clj
-;; Check inbox - user's answer will appear when they click Yes/No
-@inbox
-;; => [{:message "ANSWER", :data {:question "..." :answer true}, :timestamp #inst "..."}]
+(last @us.whitford.facade.model.agent-comms/inbox)
+;; => {:message "ANSWER", :data {:question "..." :answer true}, ...}
 ```
-
-**Step 4: Act on response (CLJ)**
-```clj
-(if (:answer (:data (last @inbox)))
-  (println "User said YES - proceeding...")
-  (println "User said NO - aborting..."))
-```
-
-**Important:** The user must click Yes or No on the toast in their browser. 
-Poll `@inbox` until the answer arrives. Messages have `:message "ANSWER"` 
-and `:data {:question "..." :answer true/false}`.
 
 ## Documentation
 

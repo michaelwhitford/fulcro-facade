@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Statechart-based prompt system** for AI agent interactions
+  - New `model/prompt.cljc` with explicit state management (`:ask/idle`, `:ask/pending`, `:ask/completed`, `:ask/timeout`)
+  - Built-in 60-second timeout support for question responses
+  - Clean request/response correlation via session-id
+  - Browser automatically polls for CLJ questions every 5 seconds
+  - `prompt/ask!` for sending questions from CLJ REPL
+  - `prompt/get-result` for polling question status and answers
+  - `prompt/pending-questions` for viewing all pending questions
+  - New `STATECHARTS.md` documentation
+  - Legacy inbox approach preserved for backward compatibility
+
 ### Changed
 - **Test suite improvements**: Added negative tests and removed placeholder test
   - Removed trivial `sample_spec.cljc` placeholder test (was just `1+1=2`)
@@ -28,6 +40,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `@agent/pending-asks` → `@prompt/pending-prompts`
   - Session IDs now use `:prompt/` prefix instead of `:agent-ask/`
   - Updated all documentation (AGENTS.md, STATECHARTS.md, PLAN.md)
+
+- **Documentation updates**:
+  - AGENTS.md: Added statechart prompt approach as recommended method
+  - README.md: Added STATECHARTS.md to documentation list
+  - ARCHITECTURE.md: Updated component counts (15 mount states, 163 attributes, 12 forms, 11 reports, 16 entities, 15 references)
+
+- **Code improvements**:
+  - package.json: Fixed name from "fulcro-rad-tempate" typo to "facade"
+  - ui/game.cljc: Added forward declaration for start-round! to resolve compilation warning
+  - ui/toast.cljc: Refactored ask! to use statechart approach internally
+  - client.cljs: Start prompt polling on app initialization
+  - components/parser.clj: Register prompt resolvers in Pathom registry
+  - development.clj: Import prompt-statecharts for REPL access
 
 ### Added
 - **Landing page redesign** with hero header and feature cards
