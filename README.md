@@ -94,7 +94,9 @@ Supporting concept guides: `FULCRO.md`, `FULCRO-RAD.md`, `PATHOM.md`, `MARTIAN.m
 
 ```bash
 # Install dependencies
-yarn
+yarn install
+# or
+npm install
 
 # Start shadow-cljs (terminal 1)
 shadow-cljs watch main
